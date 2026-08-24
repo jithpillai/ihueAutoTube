@@ -20,7 +20,7 @@ android {
         minSdk = 29          // Car App Library requires API 23+; 29 keeps things simple
         targetSdk = 35
         versionCode = 12
-        versionName = "1.0.10"
+        versionName = "1.0.12"
     }
 
     signingConfigs {
