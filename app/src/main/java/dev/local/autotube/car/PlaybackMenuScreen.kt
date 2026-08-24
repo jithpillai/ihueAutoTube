@@ -33,6 +33,15 @@ class PlaybackMenuScreen(
             )
             .addItem(
                 Row.Builder()
+                    .setTitle("Save to favorites")
+                    .setOnClickListener {
+                        screenManager.pop()
+                        onSave()
+                    }
+                    .build()
+            )
+            .addItem(
+                Row.Builder()
                     .setTitle("Manage favorites")
                     .setOnClickListener { onManageFavorites() }
                     .build()
@@ -44,15 +53,6 @@ class PlaybackMenuScreen(
                         screenManager.push(DisplayScaleScreen(carContext) {
                             screenManager.pop()
                         })
-                    }
-                    .build()
-            )
-            .addItem(
-                Row.Builder()
-                    .setTitle("Save to favorites")
-                    .setOnClickListener {
-                        screenManager.pop()
-                        onSave()
                     }
                     .build()
             )

@@ -49,6 +49,36 @@ class HomeScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleO
     override fun onGetTemplate(): Template {
         val listBuilder = ItemList.Builder()
 
+        for (fav in favorites) {
+            listBuilder.addItem(
+                Row.Builder()
+                    .setTitle(fav.title)
+                    .setOnClickListener {
+                        PlaybackScreen.openFresh(carContext, fav.url)
+                    }
+                    .build()
+            )
+        }
+
+        // Always-available entry points — kept above "Continue watching" so a growing
+        // history list never pushes them down out of view.
+        listBuilder.addItem(
+            Row.Builder()
+                .setTitle("Browse full YouTube")
+                .setOnClickListener {
+                    PlaybackScreen.openOrResume(carContext, "https://www.youtube.com")
+                }
+                .build()
+        )
+        listBuilder.addItem(
+            Row.Builder()
+                .setTitle("Open another site / enter URL")
+                .setOnClickListener {
+                    screenManager.push(BrowserScreen(carContext))
+                }
+                .build()
+        )
+
         if (history.isNotEmpty()) {
             for (h in history) {
                 listBuilder.addItem(
@@ -66,34 +96,6 @@ class HomeScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleO
             }
         }
 
-        for (fav in favorites) {
-            listBuilder.addItem(
-                Row.Builder()
-                    .setTitle(fav.title)
-                    .setOnClickListener {
-                        PlaybackScreen.openFresh(carContext, fav.url)
-                    }
-                    .build()
-            )
-        }
-
-        // Always-available entry points
-        listBuilder.addItem(
-            Row.Builder()
-                .setTitle("Browse full YouTube")
-                .setOnClickListener {
-                    PlaybackScreen.openOrResume(carContext, "https://www.youtube.com")
-                }
-                .build()
-        )
-        listBuilder.addItem(
-            Row.Builder()
-                .setTitle("Open another site / enter URL")
-                .setOnClickListener {
-                    screenManager.push(BrowserScreen(carContext))
-                }
-                .build()
-        )
         listBuilder.addItem(
             Row.Builder()
                 .setTitle("Powered by ihue")
