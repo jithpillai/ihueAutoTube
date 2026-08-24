@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Declares this app can run in Android Auto -->
+    <uses-feature android:name="android.hardware.type.automotive" android:required="false" />
+    <uses-permission android:name="androidx.car.app.NAVIGATION_TEMPLATES" />
+    <uses-permission android:name="androidx.car.app.ACCESS_SURFACE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="AutoTube"
+        android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+
+        <!-- Required: tells Android Auto this app has car-screen content, and which category.
+             We declare NAVIGATION because it's the only category that hands us a raw Surface
+             (via SurfaceCallback) instead of a fixed template UI — that's what lets us draw
+             the WebView's rendered frames onto the car screen at all. -->
+        <meta-data
+            android:name="androidx.car.app.minCarApiLevel"
+            android:value="1" />
+
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
+
+        <service
+            android:name=".car.AutoTubeCarAppService"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="AutoTube Player">
+            <intent-filter>
+                <action android:name="androidx.car.app.CarAppService" />
+                <category android:name="androidx.car.app.category.NAVIGATION" />
+            </intent-filter>
+        </service>
+
+        <!-- The actual entry point into the car UI. androidx.car.app ships this class — it
+             hosts AutoTubeCarAppService. Deliberately NOT given LAUNCHER: on a real phone,
+             CarAppActivity shows its own built-in "connect to Android Auto" gate (which reads
+             like a broken "needs update" prompt to Play Store) whenever it's opened without an
+             actual car host attached — exactly what a phone-home-screen tap is. Android Auto /
+             Automotive discover this app via the CarAppService intent-filter below, not via
+             which activity holds LAUNCHER, so this doesn't need it to be found in the car.
+             (Android Automotive OS's own built-in car launcher is an exception — its app grid
+             does resolve tiles via LAUNCHER, so testing there needs LAUNCHER added back
+             temporarily; that's an Automotive-OS-launcher quirk, not how real projected
+             Android Auto behaves.) -->
+        <activity
+            android:name="androidx.car.app.activity.CarAppActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:label="AutoTube Player"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+            <meta-data
+                android:name="distractionOptimized"
+                android:value="true" />
+        </activity>
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".AboutActivity"
+            android:label="About"
+            android:exported="false" />
+
+    </application>
+</manifest>
