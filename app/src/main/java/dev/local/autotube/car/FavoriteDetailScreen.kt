@@ -22,7 +22,7 @@ class FavoriteDetailScreen(carContext: CarContext, private val item: SavedItem) 
                     .setTitle("Open")
                     .addText(item.url)
                     .setOnClickListener {
-                        screenManager.push(PlaybackScreen(carContext, item.url))
+                        PlaybackScreen.openFresh(carContext, item.url)
                     }
                     .build()
             )

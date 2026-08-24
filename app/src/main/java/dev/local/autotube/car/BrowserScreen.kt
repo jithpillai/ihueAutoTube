@@ -41,7 +41,7 @@ class BrowserScreen(carContext: CarContext) : Screen(carContext) {
                     .setTitle("Go to \"$currentQuery\"")
                     .setOnClickListener {
                         val url = UrlUtils.normalizeUrl(currentQuery)
-                        screenManager.push(PlaybackScreen(carContext, url))
+                        PlaybackScreen.openFresh(carContext, url)
                     }
                     .build()
             )
@@ -57,7 +57,7 @@ class BrowserScreen(carContext: CarContext) : Screen(carContext) {
                     .setTitle(site.title)
                     .addText(site.url)
                     .setOnClickListener {
-                        screenManager.push(PlaybackScreen(carContext, site.url))
+                        PlaybackScreen.openFresh(carContext, site.url)
                     }
                     .build()
             )
@@ -74,7 +74,7 @@ class BrowserScreen(carContext: CarContext) : Screen(carContext) {
 
             override fun onSearchSubmitted(searchText: String) {
                 currentQuery = searchText
-                screenManager.push(PlaybackScreen(carContext, UrlUtils.normalizeUrl(searchText)))
+                PlaybackScreen.openFresh(carContext, UrlUtils.normalizeUrl(searchText))
             }
         })
             .setHeaderAction(androidx.car.app.model.Action.BACK)

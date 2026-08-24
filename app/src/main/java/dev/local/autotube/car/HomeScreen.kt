@@ -53,8 +53,9 @@ class HomeScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleO
                         .setTitle("Continue: ${h.title}")
                         .addText("Resume at ${h.lastPositionSeconds / 60}:${(h.lastPositionSeconds % 60).toString().padStart(2, '0')}")
                         .setOnClickListener {
-                            screenManager.push(
-                                PlaybackScreen(carContext, "https://www.youtube.com/watch?v=${h.videoId}&t=${h.lastPositionSeconds}s")
+                            PlaybackScreen.openFresh(
+                                carContext,
+                                "https://www.youtube.com/watch?v=${h.videoId}&t=${h.lastPositionSeconds}s"
                             )
                         }
                         .build()
@@ -67,7 +68,7 @@ class HomeScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleO
                 Row.Builder()
                     .setTitle(fav.title)
                     .setOnClickListener {
-                        screenManager.push(PlaybackScreen(carContext, fav.url))
+                        PlaybackScreen.openFresh(carContext, fav.url)
                     }
                     .build()
             )
@@ -78,7 +79,7 @@ class HomeScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleO
             Row.Builder()
                 .setTitle("Browse full YouTube")
                 .setOnClickListener {
-                    screenManager.push(PlaybackScreen(carContext, "https://www.youtube.com"))
+                    PlaybackScreen.openOrResume(carContext, "https://www.youtube.com")
                 }
                 .build()
         )

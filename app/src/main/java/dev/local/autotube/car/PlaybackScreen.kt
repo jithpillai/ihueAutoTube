@@ -2,11 +2,11 @@ package dev.local.autotube.car
 
 import android.os.Handler
 import android.os.Looper
-import android.webkit.WebView
 import androidx.car.app.AppManager
 import androidx.car.app.CarContext
 import androidx.car.app.CarToast
 import androidx.car.app.Screen
+import androidx.car.app.ScreenManager
 import androidx.car.app.SurfaceCallback
 import androidx.car.app.SurfaceContainer
 import androidx.car.app.model.Action
@@ -16,7 +16,7 @@ import androidx.car.app.navigation.model.NavigationTemplate
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
-import dev.local.autotube.bridge.WebViewSurfaceBridge
+import dev.local.autotube.bridge.PlaybackSession
 import dev.local.autotube.data.AutoTubeDatabase
 import dev.local.autotube.data.SavedItem
 import dev.local.autotube.data.WatchHistory
@@ -30,20 +30,32 @@ import kotlinx.coroutines.launch
  * SurfaceCallback via AppManager to get that Surface, and hand its frames to
  * WebViewSurfaceBridge, which is the piece doing the WebView -> Bitmap -> Surface blit
  * and the touch replay in the other direction.
+ *
+ * The WebView itself lives in [PlaybackSession], shared across PlaybackScreen instances,
+ * not owned per-instance — see that class and the [openOrResume]/[openFresh] factories
+ * below for why (PROGRESS.md bug #4: an earlier per-instance-WebView design either
+ * leaked background WebViews indefinitely, or — the opposite bug — over-eagerly killed
+ * the WebView on any lifecycle event, breaking in-page search and login sessions).
  */
-class PlaybackScreen(
+class PlaybackScreen private constructor(
     carContext: CarContext,
-    private val url: String
+    private val url: String,
+    forceLoad: Boolean
 ) : Screen(carContext), DefaultLifecycleObserver {
 
-    private val hiddenWebView = WebView(carContext)
-    private val bridge = WebViewSurfaceBridge(hiddenWebView)
+    private val bridge = PlaybackSession.bridge(carContext)
     private val drivingGate = DrivingStateGate(carContext)
 
-    // Tracks the page actually showing (drifts from the constructor's `url` once the user
-    // navigates within the WebView, e.g. clicking another video) — used for history + "Save".
-    private var currentUrl: String = url
-    private var currentTitle: String = url
+    // One-shot: only the very first onSurfaceAvailable after construction should load
+    // `url`. The raw Surface gets torn down and recreated any time another screen
+    // briefly covers this one (e.g. the Search flow), which re-fires onSurfaceAvailable
+    // on this same instance — without this being one-shot, that re-fire would reload
+    // `url` every time, silently overwriting whatever the user just navigated to (this
+    // was the "search glimpses then reverts" bug from real-car testing).
+    private var pendingForceLoad = forceLoad
+
+    private var surfaceWidth = 0
+    private var surfaceHeight = 0
 
     private val historyHandler = Handler(Looper.getMainLooper())
     private val historyIntervalMs = 15_000L
@@ -57,9 +69,14 @@ class PlaybackScreen(
     private val surfaceCallback = object : SurfaceCallback {
         override fun onSurfaceAvailable(surfaceContainer: SurfaceContainer) {
             android.util.Log.d("AutoTubeDebug", "onSurfaceAvailable w=${surfaceContainer.width} h=${surfaceContainer.height} dpi=${surfaceContainer.dpi}")
+            surfaceWidth = surfaceContainer.width
+            surfaceHeight = surfaceContainer.height
             if (!drivingGate.isRenderingAllowed) return
             bridge.attachSurface(surfaceContainer)
-            bridge.loadUrl(url)
+            if (pendingForceLoad) {
+                bridge.loadUrl(url)
+                pendingForceLoad = false
+            }
         }
 
         override fun onSurfaceDestroyed(surfaceContainer: SurfaceContainer) {
@@ -74,9 +91,13 @@ class PlaybackScreen(
         override fun onScroll(distanceX: Float, distanceY: Float) {
             android.util.Log.d("AutoTubeDebug", "onScroll dx=$distanceX dy=$distanceY")
             if (drivingGate.isRenderingAllowed) {
-                // Approximate scroll origin as screen center; refine once you've tested
-                // against your Jimny's actual input hardware (touch vs rotary controller).
-                bridge.dispatchScroll(distanceX, distanceY, 0f, 0f)
+                // Origin was previously hardcoded to (0,0) — a top-left-corner touch drag,
+                // which real-car testing confirmed doesn't scroll anything. Use the
+                // surface's actual center instead, a reasonable stand-in for wherever the
+                // rotary controller/touchpad gesture is meant to represent.
+                val centerX = surfaceWidth / 2f
+                val centerY = surfaceHeight / 2f
+                bridge.dispatchScroll(distanceX, distanceY, centerX, centerY)
             }
         }
     }
@@ -84,8 +105,34 @@ class PlaybackScreen(
     init {
         lifecycle.addObserver(this)
         carContext.getCarService(AppManager::class.java).setSurfaceCallback(surfaceCallback)
-        bridge.onPageFinished = { newUrl -> currentUrl = newUrl }
-        bridge.onTitleChanged = { title -> currentTitle = title }
+    }
+
+    companion object {
+        /** Re-enter playback without disturbing whatever's already running — reuses the
+         *  existing shared WebView/session if one is open (same page/video, still
+         *  playing) instead of spawning a new one. Use for "just go back to browsing"
+         *  entry points (Home's "Browse full YouTube"), not for a deliberately chosen
+         *  new destination. */
+        fun openOrResume(carContext: CarContext, url: String) {
+            val reusing = PlaybackSession.isOpen
+            if (reusing) PlaybackSession.bridge(carContext).loadUrl(url)
+            carContext.getCarService(ScreenManager::class.java)
+                .push(PlaybackScreen(carContext, url, forceLoad = !reusing))
+        }
+
+        /** Always starts a fresh WebView, killing whatever was previously running first.
+         *  Use whenever the user deliberately picks a specific destination — a favorite,
+         *  a history item, a typed URL/search — since that's a new thing they asked for,
+         *  not a continuation of whatever was already open. */
+        fun openFresh(carContext: CarContext, url: String) {
+            // TEMPORARILY behaves like openOrResume — see PROGRESS.md. Real-car testing
+            // showed killing the WebView on every fresh destination was compounding with
+            // the one-shot-forceLoad bug (now fixed) to make the whole thing feel broken;
+            // per explicit user direction, suppressing the auto-kill for now to validate
+            // the reuse path in isolation. Restore `PlaybackSession.close()` here once
+            // that's confirmed stable on real hardware.
+            openOrResume(carContext, url)
+        }
     }
 
     override fun onStart(owner: LifecycleOwner) {
@@ -112,8 +159,8 @@ class PlaybackScreen(
     }
 
     private fun saveHistoryIfApplicable() {
-        val videoId = extractYouTubeVideoId(currentUrl) ?: return
-        val title = currentTitle
+        val videoId = extractYouTubeVideoId(bridge.currentUrl) ?: return
+        val title = bridge.currentTitle
         bridge.currentPositionSeconds { position ->
             lifecycleScope.launch {
                 AutoTubeDatabase.get(carContext).dao().upsertHistory(
@@ -133,11 +180,10 @@ class PlaybackScreen(
         return NavigationTemplate.Builder()
             .setActionStrip(
                 ActionStrip.Builder()
-                    .addAction(Action.BACK)
                     .addAction(
                         Action.Builder()
-                            .setTitle("Save")
-                            .setOnClickListener { saveCurrentAsFavorite() }
+                            .setTitle("Menu")
+                            .setOnClickListener { openMenu() }
                             .build()
                     )
                     .build()
@@ -145,9 +191,60 @@ class PlaybackScreen(
             .build()
     }
 
+    /** Back/Home/Search/Save used to each be their own action-strip button — consolidated
+     *  into one "Menu" button + a small list screen per explicit user request (too much
+     *  clutter with 4 large buttons on the car's already-oversized action styling). */
+    private fun openMenu() {
+        screenManager.push(
+            PlaybackMenuScreen(
+                carContext,
+                onBack = { goBack() },
+                onHome = { screenManager.popToRoot() },
+                onSearch = { openSearch() },
+                onSave = { saveCurrentAsFavorite() }
+            )
+        )
+    }
+
+    /** Browser-style back: undo in-page navigation first (e.g. leave a video, back to
+     *  YouTube's home) rather than always leaving the screen outright — matches what the
+     *  user actually expects from "Back" here. Only pops this screen off the Car App
+     *  stack once there's no more in-page history. Neither this nor "Home" kill the
+     *  shared session (see PlaybackSession) — leaving is always just navigation, not a
+     *  stop; there's currently no dedicated "stop" action (removed "Close" to cut down
+     *  action-strip clutter — see PROGRESS.md). */
+    private fun goBack() {
+        if (bridge.canGoBack()) {
+            bridge.goBack()
+        } else {
+            screenManager.pop()
+        }
+    }
+
+    /** Raw-Surface content has no attached window for a system keyboard to anchor to, so
+     *  in-page search (e.g. YouTube's own search box) can't be typed into directly — see
+     *  PROGRESS.md bug #1. Instead, collect the query via a real host SearchTemplate
+     *  screen (keyboard + voice, same as BrowserScreen) and navigate this same WebView. */
+    private fun openSearch() {
+        screenManager.push(
+            SearchInPageScreen(carContext, hint = "Search YouTube") { query ->
+                bridge.loadUrl(buildSearchUrl(query))
+            }
+        )
+    }
+
+    private fun buildSearchUrl(query: String): String {
+        val encoded = java.net.URLEncoder.encode(query, "UTF-8")
+        return if (bridge.currentUrl.contains("youtube.com") || bridge.currentUrl.contains("youtu.be")) {
+            "https://www.youtube.com/results?search_query=$encoded"
+        } else {
+            UrlUtils.normalizeUrl(query)
+        }
+    }
+
     private fun saveCurrentAsFavorite() {
-        val url = currentUrl
-        val title = currentTitle
+        val url = bridge.currentUrl
+        val title = bridge.currentTitle
         lifecycleScope.launch {
             AutoTubeDatabase.get(carContext).dao().upsertSavedItem(
                 SavedItem(
