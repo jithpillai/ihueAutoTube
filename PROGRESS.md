@@ -4,12 +4,60 @@ Personal Android Auto app that shows YouTube/web content on the car screen via a
 hidden WebView rendered onto a `NavigationTemplate`'s raw `Surface`. This file is a
 handoff snapshot — read it first in any new session before touching the code.
 
-**Start with the "Real-car test results, round 3 ... — SESSION HANDOFF" section
-below** — it has the two currently-open bugs (mobile-layout/resolution still
-reverting despite 3 attempts, and scroll still not working despite 2 attempts)
-and a recommended diagnostic-first approach for the next session. Everything
-below that point is chronological history of how earlier bugs were found and
-fixed, kept for context but not required reading to start working.
+**Start with the "Current confirmed state — v1.0.9 (11)" section below.** The
+older round-by-round sections are chronological history only; several of their
+open-bug statements are now resolved.
+
+## Current confirmed state — v1.0.9 / versionCode 11 — 2026-08-24
+
+**Confirmed by real-car testing: the active playback bugs are fixed.** Video and
+audio work; YouTube holds its desktop two-column layout; the page stays compact
+without touch/scroll-triggered zoom glitches; and native touch scrolling works
+smoothly. This is the current handoff state.
+
+### Stable display-size design
+
+- The hidden WebView renders into a `VirtualDisplay` at a configurable multiple
+  of the car Surface dimensions, then its complete frame is scaled down to the
+  physical car Surface. The default **Compact (67%)** option uses `1.5x`, giving
+  YouTube a genuinely desktop-width viewport rather than trying to fool it with
+  density or JavaScript alone.
+- This VirtualDisplay multiplier is now the **only** page-size controller.
+  `setInitialScale`, overview mode, and non-default text zoom were removed,
+  because WebView applies those asynchronously after layout and they produced
+  the earlier multi-step zoom/re-render glitch.
+- `Menu → Display size` persists one explicit setting: Normal (100%), Balanced
+  (80%), Compact (67%, default), or Extra compact (57%). A size changes only
+  when the user selects it and the playback Surface is recreated; it must not
+  change during regular page interaction.
+- The desktop Chrome user-agent and `useWideViewPort` remain. The old injected
+  touch-capability spoof was removed because the real enlarged viewport is what
+  proved reliable.
+
+### Confirmed input and playback UI
+
+- `SurfaceCallback.onScroll` now maps directly to `WebView.scrollBy`, and the
+  optional host fling maps to `WebView.flingScroll`. This replaced the rejected
+  synthetic DOWN/MOVE/UP gesture replay. **Touch scrolling is confirmed good.**
+- The temporary translucent in-surface up/down scroll buttons were completely
+  removed after native touch scrolling was confirmed.
+- Playback action strip, left to right: **Back arrow**, **Search icon**, and
+  **Menu**. Back is immediate and browser-style: it goes back within WebView
+  history first, then leaves playback only when there is no page history.
+- Menu contains Home, Display size, and Save to favorites. Search is now direct
+  rather than a menu row, but still opens the host `SearchTemplate` so typing
+  works with Android Auto's keyboard.
+
+### Notes for future work
+
+- Do not reintroduce WebView initial-scale/overview/text-zoom changes without a
+  real-car test; the single VirtualDisplay scale is intentional.
+- `openFresh()` still intentionally reuses the shared WebView while the session
+  model remains conservative. Revisit only if a future feature specifically
+  needs an explicit "new/close session" action.
+- Real parked/speed sensor integration in `DrivingStateGate` and complete
+  Google-login persistence remain future enhancements, not current playback
+  blockers.
 
 ## Real-car test results, round 1 (v1.0.0 / versionCode 2) — 2026-08-24
 
