@@ -13,6 +13,7 @@ import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import dev.local.autotube.data.AutoTubeDatabase
+import dev.local.autotube.data.LocalVideoLibrary
 import dev.local.autotube.data.SavedItemType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +29,8 @@ class MainActivity : Activity() {
 
     private val scope = CoroutineScope(Dispatchers.Main)
     private lateinit var libraryStatusView: TextView
+    private lateinit var localVideoStatusView: TextView
+    private val chooseVideoFolderRequestCode = 1001
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -110,6 +113,26 @@ class MainActivity : Activity() {
             }
         )
 
+        root.addView(sectionHeader("Phone videos"))
+        localVideoStatusView = bodyText("")
+        root.addView(localVideoStatusView)
+        root.addView(
+            Button(this).apply {
+                text = "Choose video folder"
+                setPadding(0, dp(12), 0, 0)
+                setOnClickListener {
+                    startActivityForResult(
+                        Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).addFlags(
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                                Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+                        ),
+                        chooseVideoFolderRequestCode
+                    )
+                }
+            }
+        )
+
         root.addView(
             Button(this).apply {
                 text = "About"
@@ -148,6 +171,28 @@ class MainActivity : Activity() {
                 }
             }
         }
+        updateLocalVideoStatus()
+    }
+
+    private fun updateLocalVideoStatus() {
+        localVideoStatusView.text = if (LocalVideoLibrary.selectedTreeUri(this) == null) {
+            "No folder selected. Choose a folder once; AutoTube will retain access."
+        } else {
+            "A video folder is selected. Open “Play videos from phone” in Android Auto."
+        }
+    }
+
+    @Deprecated("Uses the system folder picker callback for compatibility with Activity.")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != chooseVideoFolderRequestCode || resultCode != RESULT_OK) return
+        val result = data ?: return
+        val uri = result.data ?: return
+        val grantedFlags = result.flags and
+            (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        contentResolver.takePersistableUriPermission(uri, grantedFlags)
+        LocalVideoLibrary.saveSelectedTree(this, uri)
+        updateLocalVideoStatus()
     }
 
     override fun onDestroy() {

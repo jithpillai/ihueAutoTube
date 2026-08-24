@@ -78,6 +78,15 @@ class HomeScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleO
                 }
                 .build()
         )
+        listBuilder.addItem(
+            Row.Builder()
+                .setTitle("Play videos from phone")
+                .addText("Choose a folder in the AutoTube phone app")
+                .setOnClickListener {
+                    screenManager.push(LocalVideoLibraryScreen(carContext))
+                }
+                .build()
+        )
 
         if (history.isNotEmpty()) {
             for (h in history) {
