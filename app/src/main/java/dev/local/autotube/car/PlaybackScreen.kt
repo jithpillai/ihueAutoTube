@@ -235,7 +235,9 @@ class PlaybackScreen private constructor(
      *  stop; there's currently no dedicated "stop" action (removed "Close" to cut down
      *  action-strip clutter — see PROGRESS.md). */
     private fun goBack() {
-        if (bridge.canGoBack()) {
+        if (bridge.exitFullscreen()) {
+            return
+        } else if (bridge.canGoBack()) {
             bridge.goBack()
         } else {
             screenManager.pop()

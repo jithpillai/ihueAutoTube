@@ -8,6 +8,21 @@ handoff snapshot — read it first in any new session before touching the code.
 older round-by-round sections are chronological history only; several of their
 open-bug statements are now resolved.
 
+## Fullscreen support test — v1.0.13 / versionCode 13 — unverified
+
+The YouTube fullscreen button previously showed "Full screen not available" because
+`WebChromeClient` did not implement `onShowCustomView`; Android WebView therefore
+reported fullscreen unsupported. This build adds a `FrameLayout` root inside the
+existing VirtualDisplay `Presentation`. On a fullscreen request, Chromium's custom
+video View replaces the WebView inside that same root, so ImageReader should keep
+capturing it normally. `onHideCustomView` restores the WebView, and the app's Back
+arrow exits fullscreen before using in-page browser history.
+
+Expected scope: it fills AutoTube's raw playback Surface only; Android Auto system
+UI outside that Surface cannot be hidden or taken over. Needs a real-car AAB test.
+If it renders black, fails to enter, or breaks input, revert this isolated custom-view
+handling while retaining all current layout/scroll improvements.
+
 ## Current confirmed state — v1.0.10 / versionCode 12 — 2026-08-24
 
 **Confirmed by real-car testing: the active playback bugs are fixed.** Video and

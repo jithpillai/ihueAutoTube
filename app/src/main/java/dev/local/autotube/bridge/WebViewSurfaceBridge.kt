@@ -13,7 +13,9 @@ import android.os.Handler
 import android.os.Looper
 import android.view.ContextThemeWrapper
 import android.view.MotionEvent
+import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -61,6 +63,9 @@ class WebViewSurfaceBridge(
     private var imageReader: ImageReader? = null
     private var virtualDisplay: VirtualDisplay? = null
     private var presentation: Presentation? = null
+    private var presentationRoot: FrameLayout? = null
+    private var fullscreenView: View? = null
+    private var fullscreenCallback: WebChromeClient.CustomViewCallback? = null
     private var reusableBitmap: Bitmap? = null
     private var reusableBitmapPaddedWidth: Int = 0
 
@@ -90,6 +95,17 @@ class WebViewSurfaceBridge(
         webView.webChromeClient = object : WebChromeClient() {
             override fun onReceivedTitle(view: WebView, title: String) {
                 currentTitle = title
+            }
+
+            override fun onShowCustomView(
+                view: View,
+                callback: CustomViewCallback
+            ) {
+                showFullscreenView(view, callback)
+            }
+
+            override fun onHideCustomView() {
+                hideFullscreenView(notifyPage = false)
             }
         }
         webView.settings.javaScriptEnabled = true
@@ -169,13 +185,19 @@ class WebViewSurfaceBridge(
         val pres = Presentation(themedContext, display)
         presentation = pres
 
+        // This root can swap the WebView for Chromium's fullscreen custom View without
+        // changing the Presentation/VirtualDisplay that ImageReader captures.
+        val root = FrameLayout(themedContext)
+        presentationRoot = root
+
         // The WebView is a single long-lived instance reused across attach/detach cycles
         // (PlaybackSession) — must be detached from any previous parent before reparenting.
         (webView.parent as? ViewGroup)?.removeView(webView)
-        pres.setContentView(
+        root.addView(
             webView,
             ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         )
+        pres.setContentView(root)
         pres.show()
 
         reader.setOnImageAvailableListener({ blitLatestImage(reader) }, handler)
@@ -246,8 +268,10 @@ class WebViewSurfaceBridge(
 
     private fun detachRenderTarget() {
         imageReader?.setOnImageAvailableListener(null, null)
+        hideFullscreenView(notifyPage = true)
         presentation?.dismiss()
         presentation = null
+        presentationRoot = null
         virtualDisplay?.release()
         virtualDisplay = null
         imageReader?.close()
@@ -286,6 +310,13 @@ class WebViewSurfaceBridge(
         webView.goBack()
     }
 
+    /** Leaves HTML5 fullscreen if active; used by PlaybackScreen's Back action. */
+    fun exitFullscreen(): Boolean {
+        if (fullscreenView == null) return false
+        hideFullscreenView(notifyPage = true)
+        return true
+    }
+
     /** Replays a tap from the car screen onto the WebView. */
     fun dispatchClick(x: Float, y: Float) {
         // SurfaceCallback coordinates are in the car Surface's coordinate system;
@@ -293,15 +324,16 @@ class WebViewSurfaceBridge(
         val webX = x * virtualDisplayScale
         val webY = y * virtualDisplayScale
         val now = android.os.SystemClock.uptimeMillis()
-        val downConsumed = webView.dispatchTouchEvent(
+        val touchTarget = fullscreenView ?: webView
+        val downConsumed = touchTarget.dispatchTouchEvent(
             MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, webX, webY, 0)
         )
-        val upConsumed = webView.dispatchTouchEvent(
+        val upConsumed = touchTarget.dispatchTouchEvent(
             MotionEvent.obtain(now, now + 10, MotionEvent.ACTION_UP, webX, webY, 0)
         )
         android.util.Log.d(
             "AutoTubeDebug",
-            "dispatchClick surface=$x,$y web=$webX,$webY webViewSize=${webView.width}x${webView.height} downConsumed=$downConsumed upConsumed=$upConsumed"
+            "dispatchClick surface=$x,$y web=$webX,$webY targetSize=${touchTarget.width}x${touchTarget.height} downConsumed=$downConsumed upConsumed=$upConsumed"
         )
     }
 
@@ -322,6 +354,38 @@ class WebViewSurfaceBridge(
     /** Uses the optional host fling callback when available for natural continuous scroll. */
     fun dispatchFling(velocityX: Float, velocityY: Float) {
         webView.flingScroll(velocityX.toInt(), velocityY.toInt())
+    }
+
+    private fun showFullscreenView(
+        view: View,
+        callback: WebChromeClient.CustomViewCallback
+    ) {
+        val root = presentationRoot
+        if (root == null || fullscreenView != null) {
+            callback.onCustomViewHidden()
+            return
+        }
+        (view.parent as? ViewGroup)?.removeView(view)
+        webView.visibility = View.GONE
+        root.addView(
+            view,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
+        fullscreenView = view
+        fullscreenCallback = callback
+    }
+
+    private fun hideFullscreenView(notifyPage: Boolean) {
+        val view = fullscreenView ?: return
+        (view.parent as? ViewGroup)?.removeView(view)
+        fullscreenView = null
+        webView.visibility = View.VISIBLE
+        val callback = fullscreenCallback
+        fullscreenCallback = null
+        if (notifyPage) callback?.onCustomViewHidden()
     }
 
     /** Reads the current playback position (seconds) of the page's <video> element, if any —
