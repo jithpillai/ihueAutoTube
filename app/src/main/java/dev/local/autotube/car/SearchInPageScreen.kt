@@ -4,8 +4,13 @@ import androidx.car.app.CarContext
 import androidx.car.app.Screen
 import androidx.car.app.model.Action
 import androidx.car.app.model.ItemList
+import androidx.car.app.model.Row
 import androidx.car.app.model.SearchTemplate
 import androidx.car.app.model.Template
+import androidx.lifecycle.lifecycleScope
+import dev.local.autotube.data.AutoTubeDatabase
+import dev.local.autotube.data.SearchHistory
+import kotlinx.coroutines.launch
 
 /**
  * Generic "type or speak a query" screen, reusing the host's real keyboard/voice input
@@ -21,19 +26,57 @@ class SearchInPageScreen(
     private val onSubmit: (String) -> Unit
 ) : Screen(carContext) {
 
+    private var currentQuery: String = ""
+    private var recentSearches: List<SearchHistory> = emptyList()
+
+    init {
+        lifecycleScope.launch {
+            recentSearches = AutoTubeDatabase.get(carContext).dao().getRecentSearches()
+            invalidate()
+        }
+    }
+
+    private fun submit(query: String) {
+        val trimmed = query.trim()
+        if (trimmed.isNotEmpty()) {
+            lifecycleScope.launch {
+                AutoTubeDatabase.get(carContext).dao()
+                    .upsertSearch(SearchHistory(trimmed, System.currentTimeMillis()))
+            }
+        }
+        onSubmit(query)
+        screenManager.pop()
+    }
+
     override fun onGetTemplate(): Template {
+        val list = ItemList.Builder()
+        val filtered = recentSearches.filter {
+            currentQuery.isBlank() || it.query.contains(currentQuery, ignoreCase = true)
+        }
+        for (entry in filtered) {
+            list.addItem(
+                Row.Builder()
+                    .setTitle(entry.query)
+                    .addText("Recent search")
+                    .setOnClickListener { submit(entry.query) }
+                    .build()
+            )
+        }
+
         return SearchTemplate.Builder(object : SearchTemplate.SearchCallback {
-            override fun onSearchTextChanged(searchText: String) {}
+            override fun onSearchTextChanged(searchText: String) {
+                currentQuery = searchText
+                invalidate()
+            }
 
             override fun onSearchSubmitted(searchText: String) {
-                onSubmit(searchText)
-                screenManager.pop()
+                submit(searchText)
             }
         })
             .setHeaderAction(Action.BACK)
             .setSearchHint(hint)
             .setShowKeyboardByDefault(true)
-            .setItemList(ItemList.Builder().build())
+            .setItemList(list.build())
             .build()
     }
 }

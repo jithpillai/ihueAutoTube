@@ -10,6 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import dev.local.autotube.data.AutoTubeDatabase
 import dev.local.autotube.data.SavedItem
 import dev.local.autotube.data.SavedItemType
+import dev.local.autotube.data.SearchHistory
 import kotlinx.coroutines.launch
 
 /**
@@ -21,12 +22,27 @@ class BrowserScreen(carContext: CarContext) : Screen(carContext) {
 
     private var currentQuery: String = ""
     private var knownSites: List<SavedItem> = emptyList()
+    private var recentSearches: List<SearchHistory> = emptyList()
 
     init {
         lifecycleScope.launch {
-            knownSites = AutoTubeDatabase.get(carContext).dao().getSavedItems(SavedItemType.SITE)
+            val dao = AutoTubeDatabase.get(carContext).dao()
+            knownSites = dao.getSavedItems(SavedItemType.SITE)
+            recentSearches = dao.getRecentSearches()
             invalidate()
         }
+    }
+
+    /** Shared by both "go to what I typed" and tapping a recent-search/site suggestion —
+     *  records the query so it shows up in recent searches next time, then navigates. */
+    private fun submitSearch(query: String) {
+        val trimmed = query.trim()
+        if (trimmed.isEmpty()) return
+        lifecycleScope.launch {
+            AutoTubeDatabase.get(carContext).dao()
+                .upsertSearch(SearchHistory(trimmed, System.currentTimeMillis()))
+        }
+        PlaybackScreen.openFresh(carContext, UrlUtils.normalizeUrl(trimmed))
     }
 
     override fun onGetTemplate(): Template {
@@ -39,12 +55,23 @@ class BrowserScreen(carContext: CarContext) : Screen(carContext) {
             rows.add(
                 Row.Builder()
                     .setTitle("Go to \"$currentQuery\"")
-                    .setOnClickListener {
-                        val url = UrlUtils.normalizeUrl(currentQuery)
-                        PlaybackScreen.openFresh(carContext, url)
-                    }
+                    .setOnClickListener { submitSearch(currentQuery) }
                     .build()
             )
+        }
+
+        // Recent searches only make sense as a suggestion before the user starts typing —
+        // once there's a query, the "go to" row + filtered sites above are more relevant.
+        if (currentQuery.isBlank()) {
+            for (entry in recentSearches) {
+                rows.add(
+                    Row.Builder()
+                        .setTitle(entry.query)
+                        .addText("Recent search")
+                        .setOnClickListener { submitSearch(entry.query) }
+                        .build()
+                )
+            }
         }
 
         // Saved site shortcuts, filtered live as the user types
@@ -74,7 +101,7 @@ class BrowserScreen(carContext: CarContext) : Screen(carContext) {
 
             override fun onSearchSubmitted(searchText: String) {
                 currentQuery = searchText
-                PlaybackScreen.openFresh(carContext, UrlUtils.normalizeUrl(searchText))
+                submitSearch(searchText)
             }
         })
             .setHeaderAction(androidx.car.app.model.Action.BACK)

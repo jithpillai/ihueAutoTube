@@ -81,5 +81,10 @@
             android:label="About"
             android:exported="false" />
 
+        <activity
+            android:name=".FavoritesActivity"
+            android:label="Favorites"
+            android:exported="false" />
+
     </application>
 </manifest>

@@ -6,8 +6,8 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [SavedItem::class, WatchHistory::class],
-    version = 1,
+    entities = [SavedItem::class, WatchHistory::class, SearchHistory::class],
+    version = 2,
     exportSchema = false
 )
 abstract class AutoTubeDatabase : RoomDatabase() {
@@ -22,7 +22,11 @@ abstract class AutoTubeDatabase : RoomDatabase() {
                     context.applicationContext,
                     AutoTubeDatabase::class.java,
                     "autotube.db"
-                ).build().also { INSTANCE = it }
+                )
+                    // No real migrations exist yet for this personal-use app; wiping local
+                    // favorites/history on a schema bump beats crashing on open.
+                    .fallbackToDestructiveMigration()
+                    .build().also { INSTANCE = it }
             }
     }
 }

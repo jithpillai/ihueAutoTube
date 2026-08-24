@@ -102,8 +102,18 @@ class MainActivity : Activity() {
 
         root.addView(
             Button(this).apply {
+                text = "Manage favorites"
+                setPadding(0, dp(16), 0, 0)
+                setOnClickListener {
+                    startActivity(Intent(this@MainActivity, FavoritesActivity::class.java))
+                }
+            }
+        )
+
+        root.addView(
+            Button(this).apply {
                 text = "About"
-                setPadding(0, dp(24), 0, 0)
+                setPadding(0, dp(12), 0, 0)
                 setOnClickListener {
                     startActivity(Intent(this@MainActivity, AboutActivity::class.java))
                 }

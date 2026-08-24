@@ -22,4 +22,10 @@ interface AutoTubeDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertHistory(entry: WatchHistory)
+
+    @Query("SELECT * FROM search_history ORDER BY searchedAt DESC LIMIT :limit")
+    suspend fun getRecentSearches(limit: Int = 10): List<SearchHistory>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertSearch(entry: SearchHistory)
 }
