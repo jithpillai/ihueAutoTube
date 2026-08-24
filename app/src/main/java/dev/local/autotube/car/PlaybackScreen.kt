@@ -221,6 +221,7 @@ class PlaybackScreen private constructor(
             PlaybackMenuScreen(
                 carContext,
                 onHome = { screenManager.popToRoot() },
+                onManageFavorites = { screenManager.push(FavoritesEditScreen(carContext)) },
                 onSave = { saveCurrentAsFavorite() }
             )
         )

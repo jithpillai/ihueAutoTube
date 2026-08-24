@@ -76,7 +76,14 @@ class WebViewSurfaceBridge(
 
     init {
         webView.webViewClient = object : WebViewClient() {
-            override fun onPageFinished(view: WebView, url: String) {
+            override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
+                currentUrl = url
+            }
+
+            override fun doUpdateVisitedHistory(view: WebView, url: String, isReload: Boolean) {
+                // YouTube is a single-page app. This callback follows its committed
+                // history URL, whereas onPageFinished can arrive late for the previous
+                // Home document and overwrite a video/favorite URL.
                 currentUrl = url
             }
         }

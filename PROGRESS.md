@@ -4,11 +4,11 @@ Personal Android Auto app that shows YouTube/web content on the car screen via a
 hidden WebView rendered onto a `NavigationTemplate`'s raw `Surface`. This file is a
 handoff snapshot — read it first in any new session before touching the code.
 
-**Start with the "Current confirmed state — v1.0.9 (11)" section below.** The
+**Start with the "Current confirmed state — v1.0.10 (12)" section below.** The
 older round-by-round sections are chronological history only; several of their
 open-bug statements are now resolved.
 
-## Current confirmed state — v1.0.9 / versionCode 11 — 2026-08-24
+## Current confirmed state — v1.0.10 / versionCode 12 — 2026-08-24
 
 **Confirmed by real-car testing: the active playback bugs are fixed.** Video and
 audio work; YouTube holds its desktop two-column layout; the page stays compact
@@ -44,9 +44,14 @@ smoothly. This is the current handoff state.
 - Playback action strip, left to right: **Back arrow**, **Search icon**, and
   **Menu**. Back is immediate and browser-style: it goes back within WebView
   history first, then leaves playback only when there is no page history.
-- Menu contains Home, Display size, and Save to favorites. Search is now direct
-  rather than a menu row, but still opens the host `SearchTemplate` so typing
-  works with Android Auto's keyboard.
+- Menu contains Home, Manage favorites, Display size, and Save to favorites.
+  Search is now direct rather than a menu row, but still opens the host
+  `SearchTemplate` so typing works with Android Auto's keyboard.
+- Favorite URLs are tracked from WebView navigation start and committed history,
+  rather than `onPageFinished`. This avoids YouTube's late Home-page completion
+  overwriting the URL of a video/page being saved. Favorites created by older
+  builds that already contain `youtube.com` Home must be deleted and saved again;
+  their original target URL was not stored and cannot be reconstructed.
 
 ### Notes for future work
 

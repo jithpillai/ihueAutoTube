@@ -19,6 +19,7 @@ import androidx.car.app.model.Template
 class PlaybackMenuScreen(
     carContext: CarContext,
     private val onHome: () -> Unit,
+    private val onManageFavorites: () -> Unit,
     private val onSave: () -> Unit
 ) : Screen(carContext) {
 
@@ -28,6 +29,12 @@ class PlaybackMenuScreen(
                 Row.Builder()
                     .setTitle("Home")
                     .setOnClickListener { onHome() }
+                    .build()
+            )
+            .addItem(
+                Row.Builder()
+                    .setTitle("Manage favorites")
+                    .setOnClickListener { onManageFavorites() }
                     .build()
             )
             .addItem(
