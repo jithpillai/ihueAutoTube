@@ -57,9 +57,12 @@ android {
 }
 
 dependencies {
-    // Android for Cars App Library — this is what gets us hosted on the car screen
+    // Android for Cars App Library — this is what gets us hosted on the car screen.
+    // Deliberately NOT depending on androidx.car.app:app-automotive: that artifact's own
+    // manifest declares <uses-feature android.hardware.type.automotive>, which Play Console
+    // rejects alongside the com.google.android.gms.car.application metadata (phone + Android
+    // Auto projection and standalone Automotive OS are mutually exclusive Play app types).
     implementation("androidx.car.app:app:1.4.0")
-    implementation("androidx.car.app:app-automotive:1.4.0")
 
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")

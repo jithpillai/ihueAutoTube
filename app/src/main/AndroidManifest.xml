@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Declares this app can run in Android Auto -->
-    <uses-feature android:name="android.hardware.type.automotive" android:required="false" />
+    <!-- No <uses-feature android.hardware.type.automotive> here: that flags the app as a
+         standalone Android Automotive OS app, which Play Console rejects alongside the
+         com.google.android.gms.car.application metadata below — that metadata is what marks
+         this as a phone app that projects to Android Auto, a different, mutually exclusive
+         app type on Play. -->
     <uses-permission android:name="androidx.car.app.NAVIGATION_TEMPLATES" />
     <uses-permission android:name="androidx.car.app.ACCESS_SURFACE" />
     <uses-permission android:name="android.permission.INTERNET" />
