@@ -18,23 +18,12 @@ import androidx.car.app.model.Template
  */
 class PlaybackMenuScreen(
     carContext: CarContext,
-    private val onBack: () -> Unit,
     private val onHome: () -> Unit,
-    private val onSearch: () -> Unit,
     private val onSave: () -> Unit
 ) : Screen(carContext) {
 
     override fun onGetTemplate(): Template {
         val list = ItemList.Builder()
-            .addItem(
-                Row.Builder()
-                    .setTitle("Back")
-                    .setOnClickListener {
-                        screenManager.pop()
-                        onBack()
-                    }
-                    .build()
-            )
             .addItem(
                 Row.Builder()
                     .setTitle("Home")
@@ -43,10 +32,11 @@ class PlaybackMenuScreen(
             )
             .addItem(
                 Row.Builder()
-                    .setTitle("Search")
+                    .setTitle("Display size")
                     .setOnClickListener {
-                        screenManager.pop()
-                        onSearch()
+                        screenManager.push(DisplayScaleScreen(carContext) {
+                            screenManager.pop()
+                        })
                     }
                     .build()
             )

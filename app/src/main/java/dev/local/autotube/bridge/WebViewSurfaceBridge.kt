@@ -4,7 +4,6 @@ import android.app.Presentation
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.hardware.display.DisplayManager
@@ -19,6 +18,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.car.app.SurfaceContainer
+import dev.local.autotube.data.DisplayScaleSettings
 
 /**
  * The actual "trick" that makes video/arbitrary sites show up on the car screen.
@@ -50,6 +50,11 @@ import androidx.car.app.SurfaceContainer
 class WebViewSurfaceBridge(
     private val webView: WebView
 ) {
+    // The car Surface is relatively narrow in raw pixels even on a wide display.  Web
+    // sites use those pixels for responsive breakpoints, so rendering at native size
+    // makes YouTube select its phone UI.  Give the hidden WebView a real desktop-width
+    // viewport, then scale its frame down to the fixed-resolution car Surface.
+    private var virtualDisplayScale = 1.5f
     private var surfaceContainer: SurfaceContainer? = null
     private val handler = Handler(Looper.getMainLooper())
 
@@ -58,11 +63,6 @@ class WebViewSurfaceBridge(
     private var presentation: Presentation? = null
     private var reusableBitmap: Bitmap? = null
     private var reusableBitmapPaddedWidth: Int = 0
-    private var showScrollControls = false
-    private val hideScrollControls = Runnable {
-        showScrollControls = false
-        redrawLastFrame()
-    }
 
     /** The page actually showing right now — single source of truth, since this bridge
      *  (and its WebView) can outlive any one PlaybackScreen instance (PlaybackSession
@@ -76,25 +76,6 @@ class WebViewSurfaceBridge(
 
     init {
         webView.webViewClient = object : WebViewClient() {
-            override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
-                // Even with a desktop UA, real-car testing showed YouTube's own JS
-                // re-detects touch capability client-side and switches back to its
-                // mobile layout mid-session ("initially renders as web view, but then
-                // automatically switches to mobile" per user report, confirmed via
-                // screenshots — desktop header initially, mobile layout shortly after).
-                // Spoofing away touch-capability signals before the page's own scripts
-                // run is the standard "force desktop site" trick browsers use. Not
-                // airtight (onPageStarted fires early but isn't guaranteed before every
-                // inline <head> script), but low-risk and worth trying alongside the
-                // density fix below.
-                view.evaluateJavascript(
-                    "(function(){try{" +
-                        "Object.defineProperty(navigator,'maxTouchPoints',{get:function(){return 0;}});" +
-                        "}catch(e){}})();",
-                    null
-                )
-            }
-
             override fun onPageFinished(view: WebView, url: String) {
                 currentUrl = url
             }
@@ -118,20 +99,12 @@ class WebViewSurfaceBridge(
         webView.settings.userAgentString =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
                 "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        // Belt-and-suspenders alongside the desktop UA: make sure WebView actually
-        // renders at the Surface's real pixel width instead of a default/narrow assumed
-        // viewport, and don't fight it with WebView's own pinch-zoom UI (touch replay
-        // has no pinch gesture anyway).
+        // Do not use WebView's overview or initial-scale modes here. Both calculate and
+        // apply a scale asynchronously after page layout, which created the visible
+        // multi-step zoom/re-render effect. DisplayScaleSettings is the only scale.
         webView.settings.useWideViewPort = true
-        webView.settings.loadWithOverviewMode = true
-        // Keep the page deliberately compact.  The car display has plenty of physical
-        // pixels but, at the normal phone-like logical density, YouTube sees only a
-        // narrow viewport and uses its oversized mobile UI.  The VirtualDisplay below
-        // reports a lower density (120dpi), while this initial scale makes the first
-        // paint fit even more of the page into the available surface.  These settings
-        // affect layout only; ImageReader still copies every native display pixel.
-        webView.settings.textZoom = 80
-        webView.setInitialScale(75)
+        webView.settings.loadWithOverviewMode = false
+        webView.settings.textZoom = 100
         webView.settings.builtInZoomControls = false
         webView.settings.displayZoomControls = false
         // Third-party cookies matter for Google/YouTube login flows (cross-domain
@@ -152,8 +125,15 @@ class WebViewSurfaceBridge(
         val w = container.width
         val h = container.height
         if (w <= 0 || h <= 0) return
+        virtualDisplayScale = DisplayScaleSettings.get(webView.context)
 
-        val reader = ImageReader.newInstance(w, h, PixelFormat.RGBA_8888, 2)
+        // This is deliberately a larger *source* frame, not an attempt to claim a
+        // higher physical car-screen resolution. It changes WebView's true viewport
+        // width (which YouTube's responsive code observes) and produces a compact
+        // desktop/tablet layout once scaled to the host's fixed surface.
+        val renderWidth = (w * virtualDisplayScale).toInt()
+        val renderHeight = (h * virtualDisplayScale).toInt()
+        val reader = ImageReader.newInstance(renderWidth, renderHeight, PixelFormat.RGBA_8888, 2)
         imageReader = reader
 
         val appContext = webView.context.applicationContext
@@ -163,14 +143,13 @@ class WebViewSurfaceBridge(
         // the WebView's CSS dp-width come out narrow enough to still trip YouTube's
         // mobile/responsive breakpoint even with a desktop UA (confirmed: real-car
         // screenshots showed the mobile bottom-nav despite the desktop UA change).
-        // 120 dpi makes a 960px-wide car surface look like a 1280 CSS-pixel viewport
-        // to WebView.  That is wide enough for YouTube's desktop/tablet breakpoints and
-        // deliberately makes controls, text, and thumbnails smaller without throwing
-        // away any source pixels in the ImageReader capture.
-        val webViewDensityDpi = 120
+        // Keep a conventional mdpi density. The enlarged *pixel dimensions* above are
+        // what reliably increase window.innerWidth/CSS viewport width; changing density
+        // alone did not affect YouTube's client-side mobile-layout decision.
+        val webViewDensityDpi = android.util.DisplayMetrics.DENSITY_DEFAULT
         val vd = displayManager.createVirtualDisplay(
             "AutoTubePlaybackDisplay",
-            w, h, webViewDensityDpi,
+            renderWidth, renderHeight, webViewDensityDpi,
             reader.surface,
             DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION or
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY
@@ -193,7 +172,6 @@ class WebViewSurfaceBridge(
         pres.show()
 
         reader.setOnImageAvailableListener({ blitLatestImage(reader) }, handler)
-        revealScrollControls()
     }
 
     private fun blitLatestImage(reader: ImageReader) {
@@ -236,7 +214,6 @@ class WebViewSurfaceBridge(
                     Rect(0, 0, container.width, container.height),
                     null
                 )
-                drawScrollControls(canvas, container.width, container.height)
             } catch (t: Throwable) {
                 // Surface can go away mid-frame (screen switch, car disconnect) — skip this frame.
             } finally {
@@ -256,7 +233,6 @@ class WebViewSurfaceBridge(
     }
 
     fun detachSurface() {
-        handler.removeCallbacks(hideScrollControls)
         detachRenderTarget()
         surfaceContainer = null
     }
@@ -305,18 +281,20 @@ class WebViewSurfaceBridge(
 
     /** Replays a tap from the car screen onto the WebView. */
     fun dispatchClick(x: Float, y: Float) {
-        if (handleScrollControlTap(x, y)) return
-        revealScrollControls()
+        // SurfaceCallback coordinates are in the car Surface's coordinate system;
+        // WebView is now rendered into the larger virtual-display source frame.
+        val webX = x * virtualDisplayScale
+        val webY = y * virtualDisplayScale
         val now = android.os.SystemClock.uptimeMillis()
         val downConsumed = webView.dispatchTouchEvent(
-            MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, x, y, 0)
+            MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, webX, webY, 0)
         )
         val upConsumed = webView.dispatchTouchEvent(
-            MotionEvent.obtain(now, now + 10, MotionEvent.ACTION_UP, x, y, 0)
+            MotionEvent.obtain(now, now + 10, MotionEvent.ACTION_UP, webX, webY, 0)
         )
         android.util.Log.d(
             "AutoTubeDebug",
-            "dispatchClick x=$x y=$y webViewSize=${webView.width}x${webView.height} downConsumed=$downConsumed upConsumed=$upConsumed"
+            "dispatchClick surface=$x,$y web=$webX,$webY webViewSize=${webView.width}x${webView.height} downConsumed=$downConsumed upConsumed=$upConsumed"
         )
     }
 
@@ -331,101 +309,12 @@ class WebViewSurfaceBridge(
      * including YouTube.
      */
     fun dispatchScroll(distanceX: Float, distanceY: Float) {
-        revealScrollControls()
         webView.scrollBy(distanceX.toInt(), distanceY.toInt())
     }
 
     /** Uses the optional host fling callback when available for natural continuous scroll. */
     fun dispatchFling(velocityX: Float, velocityY: Float) {
-        revealScrollControls()
         webView.flingScroll(velocityX.toInt(), velocityY.toInt())
-    }
-
-    /**
-     * Draws a lightweight, temporary scroll fallback into the same raw Surface as
-     * the WebView. A NavigationTemplate cannot host ordinary floating Android Views,
-     * so the controls intentionally live in the rendered frame and are hit-tested in
-     * [handleScrollControlTap].
-     */
-    private fun drawScrollControls(canvas: Canvas, width: Int, height: Int) {
-        if (!showScrollControls) return
-
-        val radius = (minOf(width, height) * 0.065f).coerceAtLeast(34f)
-        val centerX = width - radius * 1.45f
-        val upCenterY = height * 0.38f
-        val downCenterY = height * 0.62f
-        val background = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = android.graphics.Color.argb(95, 0, 0, 0)
-        }
-        val arrow = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = android.graphics.Color.argb(225, 255, 255, 255)
-            style = Paint.Style.STROKE
-            strokeWidth = (radius * 0.20f).coerceAtLeast(6f)
-            strokeCap = Paint.Cap.ROUND
-            strokeJoin = Paint.Join.ROUND
-        }
-
-        canvas.drawCircle(centerX, upCenterY, radius, background)
-        canvas.drawCircle(centerX, downCenterY, radius, background)
-        val arrowSize = radius * 0.32f
-        canvas.drawLine(centerX - arrowSize, upCenterY + arrowSize * 0.35f, centerX, upCenterY - arrowSize * 0.45f, arrow)
-        canvas.drawLine(centerX, upCenterY - arrowSize * 0.45f, centerX + arrowSize, upCenterY + arrowSize * 0.35f, arrow)
-        canvas.drawLine(centerX - arrowSize, downCenterY - arrowSize * 0.35f, centerX, downCenterY + arrowSize * 0.45f, arrow)
-        canvas.drawLine(centerX, downCenterY + arrowSize * 0.45f, centerX + arrowSize, downCenterY - arrowSize * 0.35f, arrow)
-    }
-
-    /** Returns true when a tap was consumed by an on-surface scroll control. */
-    private fun handleScrollControlTap(x: Float, y: Float): Boolean {
-        val container = surfaceContainer ?: return false
-        if (!showScrollControls) return false
-
-        val radius = (minOf(container.width, container.height) * 0.065f).coerceAtLeast(34f)
-        val centerX = container.width - radius * 1.45f
-        val upCenterY = container.height * 0.38f
-        val downCenterY = container.height * 0.62f
-        val hitRadius = radius * 1.25f
-        val isUp = squaredDistance(x, y, centerX, upCenterY) <= hitRadius * hitRadius
-        val isDown = squaredDistance(x, y, centerX, downCenterY) <= hitRadius * hitRadius
-        if (!isUp && !isDown) return false
-
-        // A large but controlled step keeps the controls useful even if the host never
-        // delivers a SurfaceCallback.onScroll event on this head unit.
-        val step = (container.height * 0.68f).toInt()
-        webView.scrollBy(0, if (isUp) -step else step)
-        revealScrollControls()
-        return true
-    }
-
-    private fun squaredDistance(x1: Float, y1: Float, x2: Float, y2: Float): Float {
-        val dx = x1 - x2
-        val dy = y1 - y2
-        return dx * dx + dy * dy
-    }
-
-    private fun revealScrollControls() {
-        showScrollControls = true
-        handler.removeCallbacks(hideScrollControls)
-        handler.postDelayed(hideScrollControls, 3_500L)
-        redrawLastFrame()
-    }
-
-    /** Repaints the cached frame so controls can appear/disappear without a page repaint. */
-    private fun redrawLastFrame() {
-        val container = surfaceContainer ?: return
-        val bmp = reusableBitmap ?: return
-        val surface = container.surface ?: return
-        if (!surface.isValid) return
-        var canvas: Canvas? = null
-        try {
-            canvas = surface.lockCanvas(Rect(0, 0, container.width, container.height))
-            canvas.drawColor(android.graphics.Color.BLACK)
-            canvas.drawBitmap(bmp, Rect(0, 0, container.width, container.height), Rect(0, 0, container.width, container.height), null)
-            drawScrollControls(canvas, container.width, container.height)
-        } catch (_: Throwable) {
-            // The car host can replace the Surface while controls are timing out.
-        } finally {
-            canvas?.let { surface.unlockCanvasAndPost(it) }
-        }
     }
 
     /** Reads the current playback position (seconds) of the page's <video> element, if any —

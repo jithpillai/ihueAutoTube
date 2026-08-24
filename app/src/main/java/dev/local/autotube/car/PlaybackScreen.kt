@@ -11,8 +11,10 @@ import androidx.car.app.SurfaceCallback
 import androidx.car.app.SurfaceContainer
 import androidx.car.app.model.Action
 import androidx.car.app.model.ActionStrip
+import androidx.car.app.model.CarIcon
 import androidx.car.app.model.Template
 import androidx.car.app.navigation.model.NavigationTemplate
+import androidx.core.graphics.drawable.IconCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -183,6 +185,25 @@ class PlaybackScreen private constructor(
                 ActionStrip.Builder()
                     .addAction(
                         Action.Builder()
+                            .setIcon(CarIcon.BACK)
+                            .setOnClickListener { goBack() }
+                            .build()
+                    )
+                    .addAction(
+                        Action.Builder()
+                            .setIcon(
+                                CarIcon.Builder(
+                                    IconCompat.createWithResource(
+                                        carContext,
+                                        dev.local.autotube.R.drawable.ic_search
+                                    )
+                                ).build()
+                            )
+                            .setOnClickListener { openSearch() }
+                            .build()
+                    )
+                    .addAction(
+                        Action.Builder()
                             .setTitle("Menu")
                             .setOnClickListener { openMenu() }
                             .build()
@@ -199,9 +220,7 @@ class PlaybackScreen private constructor(
         screenManager.push(
             PlaybackMenuScreen(
                 carContext,
-                onBack = { goBack() },
                 onHome = { screenManager.popToRoot() },
-                onSearch = { openSearch() },
                 onSave = { saveCurrentAsFavorite() }
             )
         )
