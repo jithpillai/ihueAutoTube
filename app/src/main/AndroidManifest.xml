@@ -43,15 +43,6 @@
             </intent-filter>
         </service>
 
-        <service
-            android:name=".local.LocalVideoPlaybackService"
-            android:exported="false"
-            android:foregroundServiceType="mediaPlayback">
-            <intent-filter>
-                <action android:name="androidx.media3.session.MediaSessionService" />
-            </intent-filter>
-        </service>
-
         <!-- The actual entry point into the car UI. androidx.car.app ships this class — it
              hosts AutoTubeCarAppService. Deliberately NOT given LAUNCHER: on a real phone,
              CarAppActivity shows its own built-in "connect to Android Auto" gate (which reads
