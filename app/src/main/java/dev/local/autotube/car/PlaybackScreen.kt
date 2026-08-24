@@ -91,13 +91,14 @@ class PlaybackScreen private constructor(
         override fun onScroll(distanceX: Float, distanceY: Float) {
             android.util.Log.d("AutoTubeDebug", "onScroll dx=$distanceX dy=$distanceY")
             if (drivingGate.isRenderingAllowed) {
-                // Origin was previously hardcoded to (0,0) — a top-left-corner touch drag,
-                // which real-car testing confirmed doesn't scroll anything. Use the
-                // surface's actual center instead, a reasonable stand-in for wherever the
-                // rotary controller/touchpad gesture is meant to represent.
-                val centerX = surfaceWidth / 2f
-                val centerY = surfaceHeight / 2f
-                bridge.dispatchScroll(distanceX, distanceY, centerX, centerY)
+                bridge.dispatchScroll(distanceX, distanceY)
+            }
+        }
+
+        override fun onFling(velocityX: Float, velocityY: Float) {
+            android.util.Log.d("AutoTubeDebug", "onFling vx=$velocityX vy=$velocityY")
+            if (drivingGate.isRenderingAllowed) {
+                bridge.dispatchFling(velocityX, velocityY)
             }
         }
     }
