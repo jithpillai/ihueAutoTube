@@ -4,6 +4,7 @@ import android.app.Presentation
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.hardware.display.DisplayManager
@@ -68,6 +69,13 @@ class WebViewSurfaceBridge(
     private var fullscreenCallback: WebChromeClient.CustomViewCallback? = null
     private var reusableBitmap: Bitmap? = null
     private var reusableBitmapPaddedWidth: Int = 0
+    private var sourceWidth = 0
+    private var sourceHeight = 0
+    private var showScrollToTop = false
+    private val hideScrollToTop = Runnable {
+        showScrollToTop = false
+        redrawLastFrame()
+    }
 
     /** The page actually showing right now — single source of truth, since this bridge
      *  (and its WebView) can outlive any one PlaybackScreen instance (PlaybackSession
@@ -156,6 +164,8 @@ class WebViewSurfaceBridge(
         // desktop/tablet layout once scaled to the host's fixed surface.
         val renderWidth = (w * virtualDisplayScale).toInt()
         val renderHeight = (h * virtualDisplayScale).toInt()
+        sourceWidth = renderWidth
+        sourceHeight = renderHeight
         val reader = ImageReader.newInstance(renderWidth, renderHeight, PixelFormat.RGBA_8888, 2)
         imageReader = reader
 
@@ -243,6 +253,7 @@ class WebViewSurfaceBridge(
                     Rect(0, 0, container.width, container.height),
                     null
                 )
+                drawScrollToTop(canvas, container.width, container.height)
             } catch (t: Throwable) {
                 // Surface can go away mid-frame (screen switch, car disconnect) — skip this frame.
             } finally {
@@ -262,6 +273,7 @@ class WebViewSurfaceBridge(
     }
 
     fun detachSurface() {
+        handler.removeCallbacks(hideScrollToTop)
         detachRenderTarget()
         surfaceContainer = null
     }
@@ -319,6 +331,7 @@ class WebViewSurfaceBridge(
 
     /** Replays a tap from the car screen onto the WebView. */
     fun dispatchClick(x: Float, y: Float) {
+        if (handleScrollToTopTap(x, y)) return
         // SurfaceCallback coordinates are in the car Surface's coordinate system;
         // WebView is now rendered into the larger virtual-display source frame.
         val webX = x * virtualDisplayScale
@@ -349,11 +362,92 @@ class WebViewSurfaceBridge(
      */
     fun dispatchScroll(distanceX: Float, distanceY: Float) {
         webView.scrollBy(distanceX.toInt(), distanceY.toInt())
+        // scrollBy updates WebView's scroll position synchronously, but defer one turn
+        // so Chromium has also applied the resulting page layout before we inspect it.
+        handler.post { revealScrollToTopIfNeeded() }
     }
 
     /** Uses the optional host fling callback when available for natural continuous scroll. */
     fun dispatchFling(velocityX: Float, velocityY: Float) {
         webView.flingScroll(velocityX.toInt(), velocityY.toInt())
+        handler.postDelayed({ revealScrollToTopIfNeeded() }, 120L)
+    }
+
+    /** Draws the compact translucent upward arrow only when page content is below top. */
+    private fun drawScrollToTop(canvas: Canvas, width: Int, height: Int) {
+        if (!showScrollToTop) return
+        val radius = (minOf(width, height) * 0.065f).coerceAtLeast(34f)
+        val centerX = width - radius * 1.45f
+        val centerY = height * 0.38f
+        val background = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.argb(95, 0, 0, 0)
+        }
+        val arrow = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.argb(225, 255, 255, 255)
+            style = Paint.Style.STROKE
+            strokeWidth = (radius * 0.20f).coerceAtLeast(6f)
+            strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
+        }
+        canvas.drawCircle(centerX, centerY, radius, background)
+        val arrowSize = radius * 0.32f
+        canvas.drawLine(centerX - arrowSize, centerY + arrowSize * 0.35f, centerX, centerY - arrowSize * 0.45f, arrow)
+        canvas.drawLine(centerX, centerY - arrowSize * 0.45f, centerX + arrowSize, centerY + arrowSize * 0.35f, arrow)
+    }
+
+    private fun handleScrollToTopTap(x: Float, y: Float): Boolean {
+        val container = surfaceContainer ?: return false
+        if (!showScrollToTop) return false
+        val radius = (minOf(container.width, container.height) * 0.065f).coerceAtLeast(34f)
+        val centerX = container.width - radius * 1.45f
+        val centerY = container.height * 0.38f
+        val hitRadius = radius * 1.25f
+        val dx = x - centerX
+        val dy = y - centerY
+        if (dx * dx + dy * dy > hitRadius * hitRadius) return false
+
+        webView.scrollTo(0, 0)
+        showScrollToTop = false
+        handler.removeCallbacks(hideScrollToTop)
+        redrawLastFrame()
+        return true
+    }
+
+    private fun revealScrollToTopIfNeeded() {
+        if (webView.scrollY <= 8) {
+            showScrollToTop = false
+            handler.removeCallbacks(hideScrollToTop)
+            redrawLastFrame()
+            return
+        }
+        showScrollToTop = true
+        handler.removeCallbacks(hideScrollToTop)
+        handler.postDelayed(hideScrollToTop, 3_500L)
+        redrawLastFrame()
+    }
+
+    /** Repaints the cached frame so the transient button can show/hide between page frames. */
+    private fun redrawLastFrame() {
+        val container = surfaceContainer ?: return
+        val bmp = reusableBitmap ?: return
+        val surface = container.surface ?: return
+        if (!surface.isValid) return
+        var canvas: Canvas? = null
+        try {
+            canvas = surface.lockCanvas(Rect(0, 0, container.width, container.height))
+            canvas.drawColor(android.graphics.Color.BLACK)
+            canvas.drawBitmap(
+                bmp,
+                Rect(0, 0, sourceWidth, sourceHeight),
+                Rect(0, 0, container.width, container.height),
+                null
+            )
+            drawScrollToTop(canvas, container.width, container.height)
+        } catch (_: Throwable) {
+            // The car host can replace the Surface while the control is timing out.
+        } finally {
+            canvas?.let { surface.unlockCanvasAndPost(it) }
+        }
     }
 
     private fun showFullscreenView(
