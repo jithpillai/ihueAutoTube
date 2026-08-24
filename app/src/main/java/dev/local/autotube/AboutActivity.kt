@@ -10,6 +10,8 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 
 class AboutActivity : Activity() {
 
@@ -17,7 +19,7 @@ class AboutActivity : Activity() {
         super.onCreate(savedInstanceState)
 
         val density = resources.displayMetrics.density
-        fun dp(value: Int) = (value * density).toInt()
+        val dp = { value: Int -> (value * density).toInt() }
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -82,6 +84,17 @@ class AboutActivity : Activity() {
             }
         )
 
-        setContentView(ScrollView(this).apply { addView(root) })
+        root.addView(poweredByIhueView(dp))
+
+        val scrollRoot = ScrollView(this).apply { addView(root) }
+        setContentView(scrollRoot)
+
+        // targetSdk 35 draws edge-to-edge by default, so the status bar can overlap the top of
+        // the content unless we pad for it ourselves.
+        ViewCompat.setOnApplyWindowInsetsListener(scrollRoot) { view, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
+        }
     }
 }

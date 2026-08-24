@@ -5,10 +5,13 @@ import androidx.car.app.Screen
 import androidx.car.app.model.Action
 import androidx.car.app.model.ActionStrip
 import androidx.car.app.model.CarColor
+import androidx.car.app.model.CarIcon
 import androidx.car.app.model.ItemList
 import androidx.car.app.model.Row
 import androidx.car.app.model.Template
 import androidx.car.app.model.ListTemplate
+import androidx.core.graphics.drawable.IconCompat
+import dev.local.autotube.R
 import dev.local.autotube.data.AutoTubeDatabase
 import dev.local.autotube.data.SavedItem
 import dev.local.autotube.data.SavedItemType
@@ -89,6 +92,12 @@ class HomeScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleO
                 .setOnClickListener {
                     screenManager.push(BrowserScreen(carContext))
                 }
+                .build()
+        )
+        listBuilder.addItem(
+            Row.Builder()
+                .setTitle("Powered by ihue")
+                .setImage(CarIcon.Builder(IconCompat.createWithResource(carContext, R.drawable.ihue_logo)).build())
                 .build()
         )
 
