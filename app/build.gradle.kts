@@ -19,8 +19,8 @@ android {
         applicationId = "dev.local.autotube"
         minSdk = 29          // Car App Library requires API 23+; 29 keeps things simple
         targetSdk = 35
-        versionCode = 25
-        versionName = "2.0.10"
+        versionCode = 26
+        versionName = "2.0.11"
     }
 
     signingConfigs {

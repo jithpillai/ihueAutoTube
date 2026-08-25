@@ -23,7 +23,7 @@ object LocalVideoPlayer {
         val uri = video.uri.toString()
         if (activeVideoUri != uri) {
             player.setMediaItem(
-                MediaItem.Builder().setUri(video.uri).setMimeType(video.mimeType).build(),
+                MediaItem.fromUri(video.uri),
                 LocalVideoProgress.position(context, video.uri)
             )
             activeVideoUri = uri
