@@ -7,6 +7,7 @@ import androidx.car.app.model.ItemList
 import androidx.car.app.model.ListTemplate
 import androidx.car.app.model.Row
 import androidx.car.app.model.Template
+import com.ihue.dashplayer.R
 import com.ihue.dashplayer.data.DisplayScaleSettings
 
 /** A deliberate, persisted display-size choice — never an automatic zoom adjustment. */
@@ -19,10 +20,14 @@ class DisplayScaleScreen(
         val selectedScale = DisplayScaleSettings.get(carContext)
         val list = ItemList.Builder()
         DisplayScaleSettings.options.forEach { option ->
+            val row = Row.Builder()
+                .setTitle(option.title)
+                .addText(option.description)
+            if (option.scale == selectedScale) {
+                row.setImage(carIcon(carContext, R.drawable.ic_check_circle))
+            }
             list.addItem(
-                Row.Builder()
-                    .setTitle(option.title + if (option.scale == selectedScale) "  ✓" else "")
-                    .addText(option.description)
+                row
                     .setOnClickListener {
                         DisplayScaleSettings.set(carContext, option.scale)
                         // Return through Menu to PlaybackScreen. Its normal surface

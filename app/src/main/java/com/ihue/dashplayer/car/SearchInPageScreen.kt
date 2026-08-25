@@ -8,6 +8,7 @@ import androidx.car.app.model.Row
 import androidx.car.app.model.SearchTemplate
 import androidx.car.app.model.Template
 import androidx.lifecycle.lifecycleScope
+import com.ihue.dashplayer.R
 import com.ihue.dashplayer.data.DashPlayerDatabase
 import com.ihue.dashplayer.data.SearchHistory
 import kotlinx.coroutines.launch
@@ -58,6 +59,7 @@ class SearchInPageScreen(
                 Row.Builder()
                     .setTitle(entry.query)
                     .addText("Recent search")
+                    .setImage(carIcon(carContext, R.drawable.ic_history))
                     .setOnClickListener { submit(entry.query) }
                     .build()
             )

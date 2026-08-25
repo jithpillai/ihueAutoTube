@@ -7,6 +7,7 @@ import androidx.car.app.model.ActionStrip
 import androidx.car.app.model.CarColor
 import androidx.car.app.model.CarIcon
 import androidx.car.app.model.ItemList
+import androidx.car.app.model.MessageTemplate
 import androidx.car.app.model.Row
 import androidx.car.app.model.Template
 import androidx.car.app.model.ListTemplate
@@ -15,6 +16,7 @@ import com.ihue.dashplayer.R
 import com.ihue.dashplayer.data.DashPlayerDatabase
 import com.ihue.dashplayer.data.SavedItem
 import com.ihue.dashplayer.data.SavedItemType
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -30,8 +32,18 @@ class HomeScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleO
     private var favorites: List<SavedItem> = emptyList()
     private var history: List<com.ihue.dashplayer.data.WatchHistory> = emptyList()
 
+    // Shown once, briefly, the first time this session's root screen is created — not on
+    // every return to Home (this Screen instance is reused for popToRoot(), so init{} and
+    // this flag only ever run/flip once per car session).
+    private var showSplash = true
+
     init {
         lifecycle.addObserver(this)
+        lifecycleScope.launch {
+            delay(2500)
+            showSplash = false
+            invalidate()
+        }
     }
 
     override fun onStart(owner: LifecycleOwner) {
@@ -47,12 +59,20 @@ class HomeScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleO
     }
 
     override fun onGetTemplate(): Template {
+        if (showSplash) {
+            return MessageTemplate.Builder("Powered by ihue")
+                .setTitle("Dash Player")
+                .setIcon(carIcon(carContext, R.drawable.app_logo))
+                .build()
+        }
+
         val listBuilder = ItemList.Builder()
 
         for (fav in favorites) {
             listBuilder.addItem(
                 Row.Builder()
                     .setTitle(fav.title)
+                    .setImage(carIcon(carContext, R.drawable.ic_star))
                     .setOnClickListener {
                         PlaybackScreen.openFresh(carContext, fav.url)
                     }
@@ -65,6 +85,7 @@ class HomeScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleO
         listBuilder.addItem(
             Row.Builder()
                 .setTitle("Browse full YouTube")
+                .setImage(carIcon(carContext, R.drawable.ic_play_circle))
                 .setOnClickListener {
                     PlaybackScreen.openOrResume(carContext, "https://www.youtube.com")
                 }
@@ -73,6 +94,7 @@ class HomeScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleO
         listBuilder.addItem(
             Row.Builder()
                 .setTitle("Open another site / enter URL")
+                .setImage(carIcon(carContext, R.drawable.ic_public))
                 .setOnClickListener {
                     screenManager.push(BrowserScreen(carContext))
                 }
@@ -82,6 +104,7 @@ class HomeScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleO
             Row.Builder()
                 .setTitle("Play videos from phone")
                 .addText("Choose a folder in the Dash Player phone app")
+                .setImage(carIcon(carContext, R.drawable.ic_folder))
                 .setOnClickListener {
                     screenManager.push(LocalVideoLibraryScreen(carContext))
                 }
@@ -94,6 +117,7 @@ class HomeScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleO
                     Row.Builder()
                         .setTitle("Continue: ${h.title}")
                         .addText("Resume at ${h.lastPositionSeconds / 60}:${(h.lastPositionSeconds % 60).toString().padStart(2, '0')}")
+                        .setImage(carIcon(carContext, R.drawable.ic_history))
                         .setOnClickListener {
                             PlaybackScreen.openFresh(
                                 carContext,

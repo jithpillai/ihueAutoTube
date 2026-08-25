@@ -19,8 +19,8 @@ android {
         applicationId = "com.ihue.dashplayer"
         minSdk = 29          // Car App Library requires API 23+; 29 keeps things simple
         targetSdk = 35
-        versionCode = 27
-        versionName = "3.0.0"
+        versionCode = 28
+        versionName = "4.0.0"
     }
 
     signingConfigs {

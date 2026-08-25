@@ -32,6 +32,12 @@
             android:name="com.google.android.gms.car.application"
             android:resource="@xml/automotive_app_desc" />
 
+        <!-- Tints host-drawn car-screen chrome with the app's brand color, within what the
+             Car App Library allows a template-based app to theme. See values/styles.xml. -->
+        <meta-data
+            android:name="androidx.car.app.theme"
+            android:resource="@style/CarAppTheme" />
+
         <service
             android:name=".car.DashPlayerCarAppService"
             android:exported="true"
@@ -70,7 +76,8 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:theme="@style/Theme.DashPlayer.Phone">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -80,12 +87,14 @@
         <activity
             android:name=".AboutActivity"
             android:label="About"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.DashPlayer.Phone" />
 
         <activity
             android:name=".FavoritesActivity"
             android:label="Favorites"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.DashPlayer.Phone" />
 
     </application>
 </manifest>

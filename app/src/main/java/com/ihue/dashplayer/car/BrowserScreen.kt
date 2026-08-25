@@ -7,6 +7,7 @@ import androidx.car.app.model.Row
 import androidx.car.app.model.Template
 import androidx.car.app.model.SearchTemplate
 import androidx.lifecycle.lifecycleScope
+import com.ihue.dashplayer.R
 import com.ihue.dashplayer.data.DashPlayerDatabase
 import com.ihue.dashplayer.data.SavedItem
 import com.ihue.dashplayer.data.SavedItemType
@@ -68,6 +69,7 @@ class BrowserScreen(carContext: CarContext) : Screen(carContext) {
                     Row.Builder()
                         .setTitle(entry.query)
                         .addText("Recent search")
+                        .setImage(carIcon(carContext, R.drawable.ic_history))
                         .setOnClickListener { submitSearch(entry.query) }
                         .build()
                 )
@@ -83,6 +85,7 @@ class BrowserScreen(carContext: CarContext) : Screen(carContext) {
                 Row.Builder()
                     .setTitle(site.title)
                     .addText(site.url)
+                    .setImage(carIcon(carContext, R.drawable.ic_public))
                     .setOnClickListener {
                         PlaybackScreen.openFresh(carContext, site.url)
                     }

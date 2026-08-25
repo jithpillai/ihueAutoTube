@@ -5,11 +5,11 @@ import android.content.Intent
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.Gravity
-import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.ihue.dashplayer.data.DashPlayerDatabase
@@ -37,23 +37,28 @@ class MainActivity : Activity() {
 
         val density = resources.displayMetrics.density
         val dp = { value: Int -> (value * density).toInt() }
+        val textSecondary = ContextCompat.getColor(this, R.color.text_secondary)
+        val accent = ContextCompat.getColor(this, R.color.accent)
 
         fun sectionHeader(text: String) = TextView(this).apply {
             this.text = text
             textSize = 14f
+            setTextColor(accent)
             setTypeface(typeface, Typeface.BOLD)
-            setPadding(0, dp(20), 0, dp(6))
+            setPadding(0, 0, 0, dp(6))
         }
 
         fun bodyText(text: String) = TextView(this).apply {
             this.text = text
             textSize = 15f
+            setTextColor(ContextCompat.getColor(context, R.color.text_primary))
             setLineSpacing(dp(4).toFloat(), 1f)
         }
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(32), dp(48), dp(32), dp(48))
+            setBackgroundColor(ContextCompat.getColor(this@MainActivity, R.color.bg_dark))
+            setPadding(dp(24), dp(48), dp(24), dp(48))
             gravity = Gravity.CENTER_HORIZONTAL
         }
 
@@ -67,6 +72,7 @@ class MainActivity : Activity() {
             TextView(this).apply {
                 text = getString(R.string.app_name)
                 textSize = 26f
+                setTextColor(ContextCompat.getColor(context, R.color.text_primary))
                 setTypeface(typeface, Typeface.BOLD)
                 gravity = Gravity.CENTER
                 setPadding(0, dp(16), 0, dp(4))
@@ -76,76 +82,97 @@ class MainActivity : Activity() {
             TextView(this).apply {
                 text = "Watch YouTube and browse the web on your car's screen via Android Auto."
                 textSize = 15f
+                setTextColor(textSecondary)
                 gravity = Gravity.CENTER
             }
         )
-
-        root.addView(sectionHeader("How to use"))
-        root.addView(
-            bodyText(
-                "1. Connect to Android Auto — plug in via USB, or wirelessly if your car " +
-                    "supports it.\n" +
-                    "2. Find the \"Dash Player\" icon on your car's screen.\n" +
-                    "3. Pick a favorite, continue a video, or browse."
-            )
-        )
-
-        root.addView(sectionHeader("What it does"))
-        root.addView(
-            bodyText(
-                "• Saves channels, playlists, and sites as favorites\n" +
-                    "• Resumes videos where you left off\n" +
-                    "• Built for Android Auto and Android Automotive OS"
-            )
-        )
-
-        root.addView(sectionHeader("Your library"))
-        libraryStatusView = bodyText("Loading…")
-        root.addView(libraryStatusView)
+        root.addView(poweredByIhueView(dp, heroSize = true))
 
         root.addView(
-            Button(this).apply {
-                text = "Manage favorites"
-                setPadding(0, dp(16), 0, 0)
-                setOnClickListener {
-                    startActivity(Intent(this@MainActivity, FavoritesActivity::class.java))
-                }
-            }
-        )
-
-        root.addView(sectionHeader("Phone videos"))
-        localVideoStatusView = bodyText("")
-        root.addView(localVideoStatusView)
-        root.addView(
-            Button(this).apply {
-                text = "Choose video folder"
-                setPadding(0, dp(12), 0, 0)
-                setOnClickListener {
-                    startActivityForResult(
-                        Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).addFlags(
-                            Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
-                                Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
-                        ),
-                        chooseVideoFolderRequestCode
+            sectionCard(dp).apply {
+                addView(sectionHeader("How to use"))
+                addView(
+                    bodyText(
+                        "1. Connect to Android Auto — plug in via USB, or wirelessly if your car " +
+                            "supports it.\n" +
+                            "2. Find the \"Dash Player\" icon on your car's screen.\n" +
+                            "3. Pick a favorite, continue a video, or browse."
                     )
-                }
+                )
             }
         )
 
         root.addView(
-            Button(this).apply {
-                text = "About"
-                setPadding(0, dp(12), 0, 0)
-                setOnClickListener {
-                    startActivity(Intent(this@MainActivity, AboutActivity::class.java))
-                }
+            sectionCard(dp).apply {
+                addView(sectionHeader("What it does"))
+                addView(
+                    bodyText(
+                        "• Saves channels, playlists, and sites as favorites\n" +
+                            "• Resumes videos where you left off\n" +
+                            "• Built for Android Auto and Android Automotive OS"
+                    )
+                )
             }
         )
 
-        root.addView(poweredByIhueView(dp))
+        root.addView(
+            sectionCard(dp).apply {
+                addView(sectionHeader("Your library"))
+                libraryStatusView = bodyText("Loading…")
+                addView(libraryStatusView)
+                addView(
+                    primaryButton("Manage favorites", dp) {
+                        startActivity(Intent(this@MainActivity, FavoritesActivity::class.java))
+                    }.apply {
+                        layoutParams = LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT
+                        ).apply { topMargin = dp(14) }
+                    }
+                )
+            }
+        )
 
-        val scrollRoot = ScrollView(this).apply { addView(root) }
+        root.addView(
+            sectionCard(dp).apply {
+                addView(sectionHeader("Phone videos"))
+                localVideoStatusView = bodyText("")
+                addView(localVideoStatusView)
+                addView(
+                    primaryButton("Choose video folder", dp) {
+                        startActivityForResult(
+                            Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).addFlags(
+                                Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                                    Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+                            ),
+                            chooseVideoFolderRequestCode
+                        )
+                    }.apply {
+                        layoutParams = LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT
+                        ).apply { topMargin = dp(14) }
+                    }
+                )
+            }
+        )
+
+        root.addView(
+            secondaryButton("About", dp) {
+                startActivity(Intent(this@MainActivity, AboutActivity::class.java))
+            }.apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = dp(20) }
+            }
+        )
+
+        val scrollRoot = ScrollView(this).apply {
+            setBackgroundColor(ContextCompat.getColor(this@MainActivity, R.color.bg_dark))
+            addView(root)
+        }
         setContentView(scrollRoot)
 
         // targetSdk 35 draws edge-to-edge by default, so the status bar can overlap the top of

@@ -1,12 +1,96 @@
-# AutoTube — Progress Log
+# Dash Player — Progress Log
 
-Personal Android Auto app that shows YouTube/web content on the car screen via a
+Formerly **AutoTube**. Personal Android Auto app that shows YouTube/web content on the car screen via a
 hidden WebView rendered onto a `NavigationTemplate`'s raw `Surface`. This file is a
 handoff snapshot — read it first in any new session before touching the code.
 
-**Start with the "Current confirmed state — v1.0.10 (12)" section below.** The
-older round-by-round sections are chronological history only; several of their
-open-bug statements are now resolved.
+**Start with the current-state section below.** Older round-by-round sections are
+chronological history only; some describe issues that are now resolved.
+
+## Current state — Dash Player 4.0.0 (versionCode 28) — 2026-08-25
+
+UI/UX-only release — no playback/render/data-layer behavior changed from 3.0.0 above.
+All functionality carries forward unchanged; this section covers the visual pass only.
+
+### What changed
+
+- **Brand palette + car host theming**: new `values/colors.xml`/`styles.xml`, accent
+  `#FF3B1A` (from `app_logo`'s play-button mark). Wired via `androidx.car.app.theme`
+  meta-data (`carColorPrimary`/`carColorSecondary` etc.) — the first time this app has
+  themed any host-drawn car chrome; previously unset entirely.
+- **Car screen icons**: 15 new vector drawables (`ic_home`, `ic_star`, `ic_folder`,
+  `ic_zoom`, `ic_menu`, `ic_play_circle`, `ic_delete`, `ic_movie`, `ic_replay10`,
+  `ic_input`, `ic_stop`, `ic_history`, `ic_public`, `ic_check_circle`, `ic_add`),
+  attached to every row/action across `HomeScreen`, `PlaybackMenuScreen`,
+  `DisplayScaleScreen`, `FavoritesEditScreen`, `FavoriteDetailScreen`,
+  `LocalVideoLibraryScreen`, `LocalVideoControlsScreen`, `BrowserScreen`,
+  `SearchInPageScreen`, and `PlaybackScreen`'s previously bare-text "Menu" action.
+  Shared helper: `car/CarIcons.kt`'s `carIcon(carContext, resId)`.
+- **One-time car splash**: `HomeScreen` shows a ~2.5s `MessageTemplate` (big centered
+  Dash Player logo, title, "Powered by ihue" text) on the session's first launch only,
+  then flips to the normal favorites list — same `Screen` instance throughout (a
+  `showSplash` flag + `lifecycleScope.launch { delay(2500); ... invalidate() }`), so
+  there's no new back-stack entry and no navigation-timing risk. Reused for
+  `popToRoot()` returns to Home, which don't re-show it.
+- **Phone-side redesign** (`MainActivity`/`AboutActivity`/`FavoritesActivity`): new
+  dark theme (`Theme.DashPlayer.Phone`, applied only to these three activities — not
+  `CarAppActivity`), card-based sections via shared helpers in `UiStyle.kt`
+  (`sectionCard`/`primaryButton`/`secondaryButton`), still plain framework widgets, no
+  new Gradle dependency. `MainActivity`'s "Powered by ihue" moved from a small bottom
+  footer to a medium (~40dp), clearly-visible row directly under the logo/title
+  (`PoweredByView.kt` gained a `heroSize` param). `FavoritesActivity` rows now show a
+  type icon (channel/playlist vs. site) and an icon-based remove button.
+- **Adaptive launcher icon**: `mipmap-anydpi-v26/ic_launcher*.xml` +
+  `drawable/ic_launcher_background.xml` (solid `accent_dark`) +
+  `drawable/ic_launcher_foreground.xml` (`app_logo` inset for the adaptive safe zone).
+  Legacy per-density PNGs kept as harmless fallback.
+
+### Verification status
+
+- `./gradlew assembleRelease` and `bundleRelease` both succeed — compile/resource-merge
+  verified only. **Not yet tested on a real car or DHU** — icon rendering, the host
+  theme's actual visual effect, dark-theme contrast on phone, and the splash timing
+  all need a real pass before calling this confirmed.
+- Signed AAB built this round: `app-release.aab`, versionCode 28 / versionName 4.0.0,
+  ready for Play Console Internal Testing upload.
+
+## Current state — Dash Player 3.0.0 (versionCode 27) — 2026-08-25 (superseded above)
+
+### Rebrand and release identity
+
+- Product name, Android labels, package/namespace, source packages, database names,
+  and car service are now **Dash Player** / `com.ihue.dashplayer`.
+- The current configured release is **3.0.0 (27)**. Treat older AutoTube version
+  numbers below as historical only.
+
+### Confirmed working
+
+- **YouTube/web playback**: the compact desktop layout, touch scrolling, back/search
+  actions, favorites, history, and fixed VirtualDisplay scale behavior remain the
+  proven baseline from real-car tests.
+- **Phone videos**: the user chooses a folder in the phone app, then opens
+  **Play videos from phone** in Android Auto. Native ExoPlayer renders both video
+  and audio to the car Surface successfully.
+- The prior local-video ANR/crash at roughly 15–25 seconds is fixed. The unstable
+  foreground MediaSession-service path was removed; local playback now remains in
+  the app process.
+- Local playback includes play/pause, Stop playback, a `+10` action, Back 10
+  seconds, and Go to position input (`1:30:00`, `90:00`, or `3` for three minutes).
+
+### Deliberately parked: local-video seeking
+
+- On the tested phone/document-provider combination, the file plays normally but
+  **every seek restarts from 0:00**. This affects `+10`, Back 10 seconds, and Go
+  to position alike; it is not a control/UI issue.
+- The playback duration may likewise appear as `0:00`. A metadata fallback is used
+  for the text where available, but it cannot make the source seekable.
+- Two attempts were rejected by real-car testing: retaining an explicit MIME type
+  did not restore seeking, and replacing the renderer with platform `MediaPlayer`
+  produced a black screen with no audio. The working ExoPlayer renderer was restored.
+- Do **not** stack more speculative seek fixes onto the working renderer. Options
+  for a future dedicated effort are: remove/disable the misleading seek controls,
+  or copy a selected video to app-private storage before playback (reliable seeking,
+  but a potentially large storage/time cost for movies).
 
 ## Fullscreen support test — v1.0.13 / versionCode 13 — unverified
 

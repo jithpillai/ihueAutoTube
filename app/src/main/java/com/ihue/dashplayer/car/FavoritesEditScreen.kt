@@ -11,6 +11,7 @@ import androidx.car.app.model.ListTemplate
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import com.ihue.dashplayer.R
 import com.ihue.dashplayer.data.DashPlayerDatabase
 import com.ihue.dashplayer.data.SavedItem
 import com.ihue.dashplayer.data.SavedItemType
@@ -46,10 +47,12 @@ class FavoritesEditScreen(carContext: CarContext) : Screen(carContext), DefaultL
             list.setNoItemsMessage("No favorites yet — tap Add to save a channel, playlist, or site.")
         }
         for (item in items) {
+            val typeIcon = if (item.type == SavedItemType.SITE) R.drawable.ic_public else R.drawable.ic_play_circle
             list.addItem(
                 Row.Builder()
                     .setTitle(item.title)
                     .addText(item.url)
+                    .setImage(carIcon(carContext, typeIcon))
                     .setOnClickListener {
                         screenManager.pushForResult(FavoriteDetailScreen(carContext, item)) { result ->
                             if (result == true) reload()
@@ -66,6 +69,7 @@ class FavoritesEditScreen(carContext: CarContext) : Screen(carContext), DefaultL
                     .addAction(
                         Action.Builder()
                             .setTitle("Add")
+                            .setIcon(carIcon(carContext, R.drawable.ic_add))
                             .setOnClickListener {
                                 screenManager.pushForResult(AddFavoriteScreen(carContext)) { result ->
                                     if (result == true) reload()

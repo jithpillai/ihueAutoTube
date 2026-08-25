@@ -8,6 +8,7 @@ import androidx.car.app.model.ListTemplate
 import androidx.car.app.model.Row
 import androidx.car.app.model.Template
 import androidx.lifecycle.lifecycleScope
+import com.ihue.dashplayer.R
 import com.ihue.dashplayer.data.DashPlayerDatabase
 import com.ihue.dashplayer.data.SavedItem
 import kotlinx.coroutines.launch
@@ -21,6 +22,7 @@ class FavoriteDetailScreen(carContext: CarContext, private val item: SavedItem) 
                 Row.Builder()
                     .setTitle("Open")
                     .addText(item.url)
+                    .setImage(carIcon(carContext, R.drawable.ic_play_circle))
                     .setOnClickListener {
                         PlaybackScreen.openFresh(carContext, item.url)
                     }
@@ -29,6 +31,7 @@ class FavoriteDetailScreen(carContext: CarContext, private val item: SavedItem) 
             .addItem(
                 Row.Builder()
                     .setTitle("Delete")
+                    .setImage(carIcon(carContext, R.drawable.ic_delete))
                     .setOnClickListener {
                         lifecycleScope.launch {
                             DashPlayerDatabase.get(carContext).dao().deleteSavedItem(item.id)

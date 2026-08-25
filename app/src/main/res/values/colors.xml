@@ -1,0 +1,13 @@
+<resources>
+    <!-- Brand accent, taken from the play-button mark in app_logo.png. -->
+    <color name="accent">#FF3B1A</color>
+    <color name="accent_dark">#C22C11</color>
+
+    <!-- Dark base for the phone-side screens (MainActivity/AboutActivity/FavoritesActivity). -->
+    <color name="bg_dark">#121212</color>
+    <color name="surface_dark">#1E1E1E</color>
+    <color name="divider">#262626</color>
+
+    <color name="text_primary">#FFFFFFFF</color>
+    <color name="text_secondary">#99FFFFFF</color>
+</resources>

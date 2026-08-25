@@ -6,23 +6,29 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 
-/** Shared "Powered by ihue" footer used on the phone-side landing and About screens. */
-fun Activity.poweredByIhueView(dp: (Int) -> Int): LinearLayout {
+/**
+ * Shared "Powered by ihue" branding row, used on the phone-side landing and About screens.
+ * [heroSize] switches between the small footer use on About and the larger, more legible
+ * hero placement directly under MainActivity's app logo/title.
+ */
+fun Activity.poweredByIhueView(dp: (Int) -> Int, heroSize: Boolean = false): LinearLayout {
+    val logoSize = if (heroSize) dp(40) else dp(28)
     return LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
-        setPadding(0, dp(32), 0, 0)
+        setPadding(0, if (heroSize) dp(12) else dp(32), 0, 0)
         addView(
             TextView(this@poweredByIhueView).apply {
                 text = "Powered by"
-                textSize = 12f
+                textSize = if (heroSize) 13f else 12f
+                setTextColor(0x99FFFFFF.toInt())
                 setPadding(0, 0, dp(6), 0)
             }
         )
         addView(
             ImageView(this@poweredByIhueView).apply {
                 setImageResource(R.drawable.ihue_logo)
-                layoutParams = LinearLayout.LayoutParams(dp(28), dp(28))
+                layoutParams = LinearLayout.LayoutParams(logoSize, logoSize)
             }
         )
     }

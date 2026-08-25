@@ -205,6 +205,7 @@ class PlaybackScreen private constructor(
                     .addAction(
                         Action.Builder()
                             .setTitle("Menu")
+                            .setIcon(carIcon(carContext, com.ihue.dashplayer.R.drawable.ic_menu))
                             .setOnClickListener { openMenu() }
                             .build()
                     )

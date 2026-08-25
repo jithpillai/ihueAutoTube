@@ -1,14 +1,16 @@
 package com.ihue.dashplayer
 
 import android.app.Activity
-import android.graphics.Color
+import android.graphics.PorterDuff
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.Gravity
-import android.widget.Button
+import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.ihue.dashplayer.data.DashPlayerDatabase
@@ -38,13 +40,15 @@ class FavoritesActivity : Activity() {
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(32), dp(48), dp(32), dp(48))
+            setBackgroundColor(ContextCompat.getColor(this@FavoritesActivity, R.color.bg_dark))
+            setPadding(dp(24), dp(48), dp(24), dp(48))
         }
 
         root.addView(
             TextView(this).apply {
                 text = "Favorites"
                 textSize = 24f
+                setTextColor(ContextCompat.getColor(context, R.color.text_primary))
                 setTypeface(typeface, Typeface.BOLD)
                 setPadding(0, 0, 0, dp(4))
             }
@@ -53,6 +57,7 @@ class FavoritesActivity : Activity() {
             TextView(this).apply {
                 text = "Channels, playlists, and sites saved from the car app."
                 textSize = 14f
+                setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
                 setPadding(0, 0, 0, dp(20))
             }
         )
@@ -60,7 +65,10 @@ class FavoritesActivity : Activity() {
         listContainer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(listContainer)
 
-        val scrollRoot = ScrollView(this).apply { addView(root) }
+        val scrollRoot = ScrollView(this).apply {
+            setBackgroundColor(ContextCompat.getColor(this@FavoritesActivity, R.color.bg_dark))
+            addView(root)
+        }
         setContentView(scrollRoot)
 
         // targetSdk 35 draws edge-to-edge by default, so the status bar can overlap the top of
@@ -93,6 +101,7 @@ class FavoritesActivity : Activity() {
                     text = "No favorites yet — save a channel, playlist, or site from the " +
                         "car app's Menu → Save to favorites."
                     textSize = 15f
+                    setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
                 }
             )
             return
@@ -104,10 +113,27 @@ class FavoritesActivity : Activity() {
     }
 
     private fun favoriteRow(item: SavedItem): LinearLayout {
-        return LinearLayout(this).apply {
+        return sectionCard(dp).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(0, dp(12), 0, dp(12))
+
+            val typeIcon = if (item.type == SavedItemType.SITE) {
+                R.drawable.ic_public
+            } else {
+                R.drawable.ic_play_circle
+            }
+            addView(
+                ImageView(this@FavoritesActivity).apply {
+                    setImageResource(typeIcon)
+                    setColorFilter(
+                        ContextCompat.getColor(context, R.color.accent),
+                        PorterDuff.Mode.SRC_IN
+                    )
+                    layoutParams = LinearLayout.LayoutParams(dp(28), dp(28)).apply {
+                        marginEnd = dp(12)
+                    }
+                }
+            )
 
             addView(
                 LinearLayout(this@FavoritesActivity).apply {
@@ -117,6 +143,7 @@ class FavoritesActivity : Activity() {
                         TextView(this@FavoritesActivity).apply {
                             text = item.title
                             textSize = 16f
+                            setTextColor(ContextCompat.getColor(context, R.color.text_primary))
                             setTypeface(typeface, Typeface.BOLD)
                         }
                     )
@@ -124,7 +151,7 @@ class FavoritesActivity : Activity() {
                         TextView(this@FavoritesActivity).apply {
                             text = item.url
                             textSize = 12f
-                            setTextColor(Color.GRAY)
+                            setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
                             maxLines = 1
                         }
                     )
@@ -132,8 +159,15 @@ class FavoritesActivity : Activity() {
             )
 
             addView(
-                Button(this@FavoritesActivity).apply {
-                    text = "Remove"
+                ImageButton(this@FavoritesActivity).apply {
+                    setImageResource(R.drawable.ic_delete)
+                    setColorFilter(
+                        ContextCompat.getColor(context, R.color.text_secondary),
+                        PorterDuff.Mode.SRC_IN
+                    )
+                    background = null
+                    contentDescription = "Remove"
+                    layoutParams = LinearLayout.LayoutParams(dp(40), dp(40))
                     setOnClickListener {
                         scope.launch {
                             DashPlayerDatabase.get(applicationContext).dao().deleteSavedItem(item.id)

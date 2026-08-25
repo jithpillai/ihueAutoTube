@@ -1,0 +1,25 @@
+<resources>
+    <!-- Car App Library host-color theme: tints host-drawn chrome (e.g. the car app's
+         primary/secondary UI accents) using the same brand palette as the phone screens.
+         Wired via the androidx.car.app.theme meta-data in AndroidManifest.xml. -->
+    <style name="CarAppTheme">
+        <item name="carColorPrimary">@color/accent</item>
+        <item name="carColorPrimaryDark">@color/accent_dark</item>
+        <item name="carColorSecondary">@color/accent</item>
+        <item name="carColorSecondaryDark">@color/accent_dark</item>
+    </style>
+
+    <!-- Dark, brand-colored theme for the phone-side screens (MainActivity/AboutActivity/
+         FavoritesActivity) — deliberately not applied to CarAppActivity, which keeps its own
+         DeviceDefault theme for the car host. -->
+    <style name="Theme.DashPlayer.Phone" parent="android:Theme.Material.NoActionBar">
+        <item name="android:colorPrimary">@color/accent</item>
+        <item name="android:colorPrimaryDark">@color/accent_dark</item>
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:windowBackground">@color/bg_dark</item>
+        <item name="android:statusBarColor">@color/bg_dark</item>
+        <item name="android:navigationBarColor">@color/bg_dark</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+    </style>
+</resources>

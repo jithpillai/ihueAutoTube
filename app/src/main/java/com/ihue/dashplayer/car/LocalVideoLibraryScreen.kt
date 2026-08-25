@@ -10,6 +10,7 @@ import androidx.car.app.model.Template
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import com.ihue.dashplayer.R
 import com.ihue.dashplayer.data.LocalVideo
 import com.ihue.dashplayer.data.LocalVideoLibrary
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +47,7 @@ class LocalVideoLibraryScreen(carContext: CarContext) : Screen(carContext), Defa
                     Row.Builder()
                         .setTitle(video.title)
                         .addText(video.mimeType ?: "Video")
+                        .setImage(carIcon(carContext, R.drawable.ic_movie))
                         .setOnClickListener {
                             screenManager.push(LocalVideoPlaybackScreen(carContext, video))
                         }
