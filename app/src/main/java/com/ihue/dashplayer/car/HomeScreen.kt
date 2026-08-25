@@ -68,20 +68,8 @@ class HomeScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleO
 
         val listBuilder = ItemList.Builder()
 
-        for (fav in favorites) {
-            listBuilder.addItem(
-                Row.Builder()
-                    .setTitle(fav.title)
-                    .setImage(carIcon(carContext, R.drawable.ic_star))
-                    .setOnClickListener {
-                        PlaybackScreen.openFresh(carContext, fav.url)
-                    }
-                    .build()
-            )
-        }
-
-        // Always-available entry points — kept above "Continue watching" so a growing
-        // history list never pushes them down out of view.
+        // Always-available entry points — kept first so they never move around as
+        // favorites/history are added or grow the list below them.
         listBuilder.addItem(
             Row.Builder()
                 .setTitle("Browse full YouTube")
@@ -111,6 +99,18 @@ class HomeScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleO
                 .build()
         )
 
+        for (fav in favorites) {
+            listBuilder.addItem(
+                Row.Builder()
+                    .setTitle(fav.title)
+                    .setImage(carIcon(carContext, R.drawable.ic_star))
+                    .setOnClickListener {
+                        PlaybackScreen.openFresh(carContext, fav.url)
+                    }
+                    .build()
+            )
+        }
+
         if (history.isNotEmpty()) {
             for (h in history) {
                 listBuilder.addItem(
@@ -132,7 +132,7 @@ class HomeScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleO
         listBuilder.addItem(
             Row.Builder()
                 .setTitle("Powered by ihue")
-                .setImage(CarIcon.Builder(IconCompat.createWithResource(carContext, R.drawable.ihue_logo)).build())
+                .setImage(CarIcon.Builder(IconCompat.createWithResource(carContext, R.drawable.ihue_logo_white)).build())
                 .build()
         )
 

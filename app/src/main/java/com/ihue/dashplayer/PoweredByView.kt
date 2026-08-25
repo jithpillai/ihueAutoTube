@@ -15,7 +15,7 @@ fun Activity.poweredByIhueView(dp: (Int) -> Int, heroSize: Boolean = false): Lin
     val logoSize = if (heroSize) dp(40) else dp(28)
     return LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL
-        gravity = Gravity.CENTER_VERTICAL
+        gravity = Gravity.CENTER
         setPadding(0, if (heroSize) dp(12) else dp(32), 0, 0)
         addView(
             TextView(this@poweredByIhueView).apply {
@@ -27,7 +27,7 @@ fun Activity.poweredByIhueView(dp: (Int) -> Int, heroSize: Boolean = false): Lin
         )
         addView(
             ImageView(this@poweredByIhueView).apply {
-                setImageResource(R.drawable.ihue_logo)
+                setImageResource(R.drawable.ihue_logo_white)
                 layoutParams = LinearLayout.LayoutParams(logoSize, logoSize)
             }
         )

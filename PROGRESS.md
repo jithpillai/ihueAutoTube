@@ -7,7 +7,7 @@ handoff snapshot — read it first in any new session before touching the code.
 **Start with the current-state section below.** Older round-by-round sections are
 chronological history only; some describe issues that are now resolved.
 
-## Current state — Dash Player 4.0.0 (versionCode 28) — 2026-08-25
+## Current state — Dash Player 4.0.1 (versionCode 32) — 2026-08-25
 
 UI/UX-only release — no playback/render/data-layer behavior changed from 3.0.0 above.
 All functionality carries forward unchanged; this section covers the visual pass only.
@@ -40,19 +40,65 @@ All functionality carries forward unchanged; this section covers the visual pass
   footer to a medium (~40dp), clearly-visible row directly under the logo/title
   (`PoweredByView.kt` gained a `heroSize` param). `FavoritesActivity` rows now show a
   type icon (channel/playlist vs. site) and an icon-based remove button.
-- **Adaptive launcher icon**: `mipmap-anydpi-v26/ic_launcher*.xml` +
-  `drawable/ic_launcher_background.xml` (solid `accent_dark`) +
-  `drawable/ic_launcher_foreground.xml` (`app_logo` inset for the adaptive safe zone).
-  Legacy per-density PNGs kept as harmless fallback.
+- ~~**Adaptive launcher icon**~~ — attempted, broke the icon (see "Fixes after first
+  look" below), reverted.
+
+### Fixes after first look (still 4.0.0, versionCode bumped 28 → 29)
+
+User feedback after seeing the first 4.0.0 build:
+
+1. **Launcher icon was cropped.** Root cause: the adaptive-icon foreground
+   (`ic_launcher_foreground.xml`) referenced `app_logo` — which lives in
+   `drawable-nodpi/` — inside an `<inset><bitmap android:gravity="center">`. `nodpi`
+   means the 512x512 PNG is used at 1:1 pixel scale with no density-bucket scaling,
+   and `gravity="center"` (instead of the default `fill`) draws the bitmap at that
+   native size instead of scaling it to the inset bounds — so on any real device it
+   rendered far larger than the icon canvas and got clipped. **Fix**: removed the
+   adaptive icon entirely (deleted `mipmap-anydpi-v26/ic_launcher*.xml` and the two
+   `ic_launcher_background`/`ic_launcher_foreground` drawables) — back to the original
+   legacy per-density `mipmap-*/ic_launcher*.png`, per explicit user preference ("use
+   the original app icon itself").
+2. **ihue_logo's black wordmark/tap-icon was invisible on the new dark theme.**
+   Generated `drawable-nodpi/ihue_logo_white.png` — same file with only the near-black
+   pixels (threshold-based, RGB < 60) repainted white, colorful splash drops
+   untouched — via a one-off Python/PIL script (not checked in). All `R.drawable
+   .ihue_logo` references (`PoweredByView.kt`, `HomeScreen.kt`'s row) now point at
+   `ihue_logo_white`. The original `ihue_logo.png` is kept, unused, in case a future
+   light-background context wants it.
+3. **No phone-side splash screen existed** — the "hero" MainActivity redesign wasn't
+   an actual splash, just the top of the landing activity. Added `SplashActivity.kt`:
+   logo + "Dash Player" + hero "Powered by ihue", shown for 1.6s then launches
+   `MainActivity` and finishes itself. Now the `LAUNCHER` activity in the manifest
+   (`MainActivity` lost `LAUNCHER`/`exported`, only reachable from `SplashActivity`
+   now).
+
+4. **"Powered by ihue" row rendered off to the side instead of centered** (seen on the
+   phone splash). Root cause: `PoweredByView.kt`'s row `LinearLayout` never set its own
+   `layoutParams`, so when added to a vertical parent it got the parent's default
+   `MATCH_PARENT`-width child params — and the row's own `gravity` was
+   `CENTER_VERTICAL` only, so its content (text + logo) sat left-aligned within that
+   full-width row. The app-name `TextView` above it looked fine only because `TextView
+   .gravity` centers its own text regardless of the view's width — a `LinearLayout`
+   row needs `CENTER_HORIZONTAL` explicitly. **Fix**: `gravity = Gravity.CENTER`
+   (both axes) on that row — fixes it everywhere the shared helper is used (splash,
+   MainActivity hero, AboutActivity footer), not just the splash where it was noticed.
+
+5. **Home screen row order**: the three fixed entry points (Browse full YouTube / Open
+   another site / Play videos from phone) were being pushed below the favorites list
+   instead of anchoring the top. `HomeScreen.onGetTemplate()` now adds those three
+   rows first, favorites after, history last — matches the code comment's original
+   intent ("kept above...") which the actual row-add order didn't.
 
 ### Verification status
 
 - `./gradlew assembleRelease` and `bundleRelease` both succeed — compile/resource-merge
-  verified only. **Not yet tested on a real car or DHU** — icon rendering, the host
-  theme's actual visual effect, dark-theme contrast on phone, and the splash timing
-  all need a real pass before calling this confirmed.
-- Signed AAB built this round: `app-release.aab`, versionCode 28 / versionName 4.0.0,
-  ready for Play Console Internal Testing upload.
+  verified only. **Not yet tested on a real car or DHU** — the host theme's actual
+  visual effect, dark-theme contrast, and both splash screens' timing/look still need
+  a real pass before calling this confirmed.
+- Signed AAB built this round: `app-release.aab`, versionCode 32 / versionName 4.0.1,
+  ready for Play Console Internal Testing upload. **Convention going forward: bump
+  `versionCode` on every rebuild, even a versionName-only or no-code-change rebuild**
+  — Play Console rejects re-uploading a versionCode it's already seen.
 
 ## Current state — Dash Player 3.0.0 (versionCode 27) — 2026-08-25 (superseded above)
 
