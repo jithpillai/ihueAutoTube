@@ -12,11 +12,11 @@ val keystoreProperties = Properties().apply {
 }
 
 android {
-    namespace = "dev.local.autotube"
+    namespace = "com.ihue.dashplayer"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "dev.local.autotube"
+        applicationId = "com.ihue.dashplayer"
         minSdk = 29          // Car App Library requires API 23+; 29 keeps things simple
         targetSdk = 35
         versionCode = 26

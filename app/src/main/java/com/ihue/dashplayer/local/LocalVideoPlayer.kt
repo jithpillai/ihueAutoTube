@@ -1,11 +1,11 @@
-package dev.local.autotube.local
+package com.ihue.dashplayer.local
 
 import android.content.Context
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
-import dev.local.autotube.data.LocalVideo
-import dev.local.autotube.data.LocalVideoProgress
+import com.ihue.dashplayer.data.LocalVideo
+import com.ihue.dashplayer.data.LocalVideoProgress
 
 /** Process-wide player shared across Android Auto screen transitions. */
 object LocalVideoPlayer {

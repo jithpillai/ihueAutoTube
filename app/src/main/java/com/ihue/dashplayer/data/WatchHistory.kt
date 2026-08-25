@@ -1,4 +1,4 @@
-package dev.local.autotube.data
+package com.ihue.dashplayer.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

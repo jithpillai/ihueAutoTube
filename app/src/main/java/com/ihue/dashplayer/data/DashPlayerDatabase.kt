@@ -1,4 +1,4 @@
-package dev.local.autotube.data
+package com.ihue.dashplayer.data
 
 import android.content.Context
 import androidx.room.Database
@@ -10,18 +10,18 @@ import androidx.room.RoomDatabase
     version = 2,
     exportSchema = false
 )
-abstract class AutoTubeDatabase : RoomDatabase() {
-    abstract fun dao(): AutoTubeDao
+abstract class DashPlayerDatabase : RoomDatabase() {
+    abstract fun dao(): DashPlayerDao
 
     companion object {
-        @Volatile private var INSTANCE: AutoTubeDatabase? = null
+        @Volatile private var INSTANCE: DashPlayerDatabase? = null
 
-        fun get(context: Context): AutoTubeDatabase =
+        fun get(context: Context): DashPlayerDatabase =
             INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
                     context.applicationContext,
-                    AutoTubeDatabase::class.java,
-                    "autotube.db"
+                    DashPlayerDatabase::class.java,
+                    "dashplayer.db"
                 )
                     // No real migrations exist yet for this personal-use app; wiping local
                     // favorites/history on a schema bump beats crashing on open.

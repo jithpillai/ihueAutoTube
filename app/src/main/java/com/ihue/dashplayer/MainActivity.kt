@@ -1,4 +1,4 @@
-package dev.local.autotube
+package com.ihue.dashplayer
 
 import android.app.Activity
 import android.content.Intent
@@ -12,9 +12,9 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import dev.local.autotube.data.AutoTubeDatabase
-import dev.local.autotube.data.LocalVideoLibrary
-import dev.local.autotube.data.SavedItemType
+import com.ihue.dashplayer.data.DashPlayerDatabase
+import com.ihue.dashplayer.data.LocalVideoLibrary
+import com.ihue.dashplayer.data.SavedItemType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -85,7 +85,7 @@ class MainActivity : Activity() {
             bodyText(
                 "1. Connect to Android Auto — plug in via USB, or wirelessly if your car " +
                     "supports it.\n" +
-                    "2. Find the \"AutoTube Player\" icon on your car's screen.\n" +
+                    "2. Find the \"Dash Player\" icon on your car's screen.\n" +
                     "3. Pick a favorite, continue a video, or browse."
             )
         )
@@ -157,7 +157,7 @@ class MainActivity : Activity() {
         }
 
         scope.launch {
-            val dao = AutoTubeDatabase.get(applicationContext).dao()
+            val dao = DashPlayerDatabase.get(applicationContext).dao()
             val favoritesCount = dao.getSavedItems(SavedItemType.CHANNEL).size +
                 dao.getSavedItems(SavedItemType.PLAYLIST).size +
                 dao.getSavedItems(SavedItemType.SITE).size
@@ -176,7 +176,7 @@ class MainActivity : Activity() {
 
     private fun updateLocalVideoStatus() {
         localVideoStatusView.text = if (LocalVideoLibrary.selectedTreeUri(this) == null) {
-            "No folder selected. Choose a folder once; AutoTube will retain access."
+            "No folder selected. Choose a folder once; Dash Player will retain access."
         } else {
             "A video folder is selected. Open “Play videos from phone” in Android Auto."
         }

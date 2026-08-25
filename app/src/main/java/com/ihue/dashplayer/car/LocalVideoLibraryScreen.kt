@@ -1,4 +1,4 @@
-package dev.local.autotube.car
+package com.ihue.dashplayer.car
 
 import androidx.car.app.CarContext
 import androidx.car.app.Screen
@@ -10,8 +10,8 @@ import androidx.car.app.model.Template
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
-import dev.local.autotube.data.LocalVideo
-import dev.local.autotube.data.LocalVideoLibrary
+import com.ihue.dashplayer.data.LocalVideo
+import com.ihue.dashplayer.data.LocalVideoLibrary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -39,7 +39,7 @@ class LocalVideoLibraryScreen(carContext: CarContext) : Screen(carContext), Defa
         val list = ItemList.Builder()
         when {
             isLoading -> list.setNoItemsMessage("Loading phone videos…")
-            !hasFolder -> list.setNoItemsMessage("Choose a video folder in the AutoTube phone app first.")
+            !hasFolder -> list.setNoItemsMessage("Choose a video folder in the Dash Player phone app first.")
             videos.isEmpty() -> list.setNoItemsMessage("No supported video files found in the selected folder.")
             else -> videos.forEach { video ->
                 list.addItem(

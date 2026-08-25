@@ -586,11 +586,11 @@ directions, none tried yet:
 
 ## Distribution / Play Console
 
-- **Package name**: `dev.local.autotube`
-- **Repo**: https://github.com/jithpillai/ihueAutoTube.git (`main`)
-- **Privacy policy** (live): https://jithpillai.github.io/ihue-legal/autotube/
+- **Package name**: `com.ihue.dashplayer`
+- **Repo**: https://github.com/jithpillai/ihueDashPlayer.git (`main`)
+- **Privacy policy** (live): https://jithpillai.github.io/ihue-legal/dashplayer/
   — source in the separate `ihue-legal` repo (`/Users/prijith/proto/ihue-legal`,
-  `autotube/index.html`), which also has a hueai app's policy as a style reference.
+  `dashplayer/index.html`), which also has a hueai app's policy as a style reference.
 - **Release signing**: keystore at `app/keystore/autotube-release.jks`, credentials
   in `app/keystore/keystore.properties` (both gitignored — **never commit these**).
   **Back up the keystore file somewhere safe outside this machine** — if it's lost

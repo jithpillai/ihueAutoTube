@@ -1,4 +1,4 @@
-package dev.local.autotube.car
+package com.ihue.dashplayer.car
 
 import android.os.Handler
 import android.os.Looper
@@ -18,10 +18,10 @@ import androidx.core.graphics.drawable.IconCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
-import dev.local.autotube.bridge.PlaybackSession
-import dev.local.autotube.data.AutoTubeDatabase
-import dev.local.autotube.data.SavedItem
-import dev.local.autotube.data.WatchHistory
+import com.ihue.dashplayer.bridge.PlaybackSession
+import com.ihue.dashplayer.data.DashPlayerDatabase
+import com.ihue.dashplayer.data.SavedItem
+import com.ihue.dashplayer.data.WatchHistory
 import kotlinx.coroutines.launch
 
 /**
@@ -70,7 +70,7 @@ class PlaybackScreen private constructor(
 
     private val surfaceCallback = object : SurfaceCallback {
         override fun onSurfaceAvailable(surfaceContainer: SurfaceContainer) {
-            android.util.Log.d("AutoTubeDebug", "onSurfaceAvailable w=${surfaceContainer.width} h=${surfaceContainer.height} dpi=${surfaceContainer.dpi}")
+            android.util.Log.d("DashPlayerDebug", "onSurfaceAvailable w=${surfaceContainer.width} h=${surfaceContainer.height} dpi=${surfaceContainer.dpi}")
             surfaceWidth = surfaceContainer.width
             surfaceHeight = surfaceContainer.height
             if (!drivingGate.isRenderingAllowed) return
@@ -86,19 +86,19 @@ class PlaybackScreen private constructor(
         }
 
         override fun onClick(x: Float, y: Float) {
-            android.util.Log.d("AutoTubeDebug", "onClick x=$x y=$y allowed=${drivingGate.isRenderingAllowed}")
+            android.util.Log.d("DashPlayerDebug", "onClick x=$x y=$y allowed=${drivingGate.isRenderingAllowed}")
             if (drivingGate.isRenderingAllowed) bridge.dispatchClick(x, y)
         }
 
         override fun onScroll(distanceX: Float, distanceY: Float) {
-            android.util.Log.d("AutoTubeDebug", "onScroll dx=$distanceX dy=$distanceY")
+            android.util.Log.d("DashPlayerDebug", "onScroll dx=$distanceX dy=$distanceY")
             if (drivingGate.isRenderingAllowed) {
                 bridge.dispatchScroll(distanceX, distanceY)
             }
         }
 
         override fun onFling(velocityX: Float, velocityY: Float) {
-            android.util.Log.d("AutoTubeDebug", "onFling vx=$velocityX vy=$velocityY")
+            android.util.Log.d("DashPlayerDebug", "onFling vx=$velocityX vy=$velocityY")
             if (drivingGate.isRenderingAllowed) {
                 bridge.dispatchFling(velocityX, velocityY)
             }
@@ -166,7 +166,7 @@ class PlaybackScreen private constructor(
         val title = bridge.currentTitle
         bridge.currentPositionSeconds { position ->
             lifecycleScope.launch {
-                AutoTubeDatabase.get(carContext).dao().upsertHistory(
+                DashPlayerDatabase.get(carContext).dao().upsertHistory(
                     WatchHistory(
                         videoId = videoId,
                         title = title,
@@ -195,7 +195,7 @@ class PlaybackScreen private constructor(
                                 CarIcon.Builder(
                                     IconCompat.createWithResource(
                                         carContext,
-                                        dev.local.autotube.R.drawable.ic_search
+                                        com.ihue.dashplayer.R.drawable.ic_search
                                     )
                                 ).build()
                             )
@@ -269,7 +269,7 @@ class PlaybackScreen private constructor(
         val url = bridge.currentUrl
         val title = bridge.currentTitle
         lifecycleScope.launch {
-            AutoTubeDatabase.get(carContext).dao().upsertSavedItem(
+            DashPlayerDatabase.get(carContext).dao().upsertSavedItem(
                 SavedItem(
                     type = UrlUtils.guessType(url),
                     title = title,

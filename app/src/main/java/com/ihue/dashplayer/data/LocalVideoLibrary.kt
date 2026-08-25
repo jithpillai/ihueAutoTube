@@ -1,4 +1,4 @@
-package dev.local.autotube.data
+package com.ihue.dashplayer.data
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -19,7 +19,7 @@ data class LocalVideoEntry(val folder: LocalVideoFolder? = null, val video: Loca
 
 /** Stores a user-chosen media folder and exposes only its video files to the car UI. */
 object LocalVideoLibrary {
-    private const val preferencesName = "autotube_local_videos"
+    private const val preferencesName = "dashplayer_local_videos"
     private const val treeUriKey = "tree_uri"
     private const val maxItems = 500
 

@@ -1,4 +1,4 @@
-package dev.local.autotube.car
+package com.ihue.dashplayer.car
 
 import androidx.car.app.CarContext
 import androidx.car.app.Screen
@@ -11,9 +11,9 @@ import androidx.car.app.model.ListTemplate
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
-import dev.local.autotube.data.AutoTubeDatabase
-import dev.local.autotube.data.SavedItem
-import dev.local.autotube.data.SavedItemType
+import com.ihue.dashplayer.data.DashPlayerDatabase
+import com.ihue.dashplayer.data.SavedItem
+import com.ihue.dashplayer.data.SavedItemType
 import kotlinx.coroutines.launch
 
 class FavoritesEditScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleObserver {
@@ -32,7 +32,7 @@ class FavoritesEditScreen(carContext: CarContext) : Screen(carContext), DefaultL
 
     private fun reload() {
         lifecycleScope.launch {
-            val dao = AutoTubeDatabase.get(carContext).dao()
+            val dao = DashPlayerDatabase.get(carContext).dao()
             items = dao.getSavedItems(SavedItemType.CHANNEL) +
                 dao.getSavedItems(SavedItemType.PLAYLIST) +
                 dao.getSavedItems(SavedItemType.SITE)

@@ -1,4 +1,4 @@
-package dev.local.autotube.car
+package com.ihue.dashplayer.car
 
 import androidx.car.app.CarContext
 import androidx.car.app.Screen
@@ -11,10 +11,10 @@ import androidx.car.app.model.Row
 import androidx.car.app.model.Template
 import androidx.car.app.model.ListTemplate
 import androidx.core.graphics.drawable.IconCompat
-import dev.local.autotube.R
-import dev.local.autotube.data.AutoTubeDatabase
-import dev.local.autotube.data.SavedItem
-import dev.local.autotube.data.SavedItemType
+import com.ihue.dashplayer.R
+import com.ihue.dashplayer.data.DashPlayerDatabase
+import com.ihue.dashplayer.data.SavedItem
+import com.ihue.dashplayer.data.SavedItemType
 import kotlinx.coroutines.launch
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -28,7 +28,7 @@ import androidx.lifecycle.lifecycleScope
 class HomeScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleObserver {
 
     private var favorites: List<SavedItem> = emptyList()
-    private var history: List<dev.local.autotube.data.WatchHistory> = emptyList()
+    private var history: List<com.ihue.dashplayer.data.WatchHistory> = emptyList()
 
     init {
         lifecycle.addObserver(this)
@@ -39,7 +39,7 @@ class HomeScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleO
         // otherwise favorites added/deleted via "Manage favorites" or history recorded during
         // playback wouldn't show up until the app was fully restarted.
         lifecycleScope.launch {
-            val dao = AutoTubeDatabase.get(carContext).dao()
+            val dao = DashPlayerDatabase.get(carContext).dao()
             favorites = dao.getSavedItems(SavedItemType.CHANNEL) + dao.getSavedItems(SavedItemType.PLAYLIST)
             history = dao.getRecentHistory(5)
             invalidate()
@@ -81,7 +81,7 @@ class HomeScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleO
         listBuilder.addItem(
             Row.Builder()
                 .setTitle("Play videos from phone")
-                .addText("Choose a folder in the AutoTube phone app")
+                .addText("Choose a folder in the Dash Player phone app")
                 .setOnClickListener {
                     screenManager.push(LocalVideoLibraryScreen(carContext))
                 }
@@ -113,7 +113,7 @@ class HomeScreen(carContext: CarContext) : Screen(carContext), DefaultLifecycleO
         )
 
         return ListTemplate.Builder()
-            .setTitle("AutoTube")
+            .setTitle("Dash Player")
             .setSingleList(listBuilder.build())
             .setActionStrip(
                 ActionStrip.Builder()

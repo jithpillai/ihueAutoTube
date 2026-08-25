@@ -1,6 +1,6 @@
-package dev.local.autotube.car
+package com.ihue.dashplayer.car
 
-import dev.local.autotube.data.SavedItemType
+import com.ihue.dashplayer.data.SavedItemType
 import java.net.URLEncoder
 
 /** Shared URL handling for anything that turns free-typed text into a URL/favorite. */

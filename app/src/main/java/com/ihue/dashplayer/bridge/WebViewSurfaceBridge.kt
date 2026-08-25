@@ -1,4 +1,4 @@
-package dev.local.autotube.bridge
+package com.ihue.dashplayer.bridge
 
 import android.app.Presentation
 import android.content.Context
@@ -21,7 +21,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.car.app.SurfaceContainer
-import dev.local.autotube.data.DisplayScaleSettings
+import com.ihue.dashplayer.data.DisplayScaleSettings
 
 /**
  * The actual "trick" that makes video/arbitrary sites show up on the car screen.
@@ -181,7 +181,7 @@ class WebViewSurfaceBridge(
         // alone did not affect YouTube's client-side mobile-layout decision.
         val webViewDensityDpi = android.util.DisplayMetrics.DENSITY_DEFAULT
         val vd = displayManager.createVirtualDisplay(
-            "AutoTubePlaybackDisplay",
+            "DashPlayerPlaybackDisplay",
             renderWidth, renderHeight, webViewDensityDpi,
             reader.surface,
             DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION or
@@ -345,7 +345,7 @@ class WebViewSurfaceBridge(
             MotionEvent.obtain(now, now + 10, MotionEvent.ACTION_UP, webX, webY, 0)
         )
         android.util.Log.d(
-            "AutoTubeDebug",
+            "DashPlayerDebug",
             "dispatchClick surface=$x,$y web=$webX,$webY targetSize=${touchTarget.width}x${touchTarget.height} downConsumed=$downConsumed upConsumed=$upConsumed"
         )
     }

@@ -1,4 +1,4 @@
-package dev.local.autotube.data
+package com.ihue.dashplayer.data
 
 import android.content.Context
 
@@ -17,7 +17,7 @@ object DisplayScaleSettings {
         Option(1.75f, "Extra compact (57%)", "Smallest content; uses more processing")
     )
 
-    private const val preferencesName = "autotube_display"
+    private const val preferencesName = "dashplayer_display"
     private const val scaleKey = "virtual_display_scale"
     private const val defaultScale = 1.5f
 

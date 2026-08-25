@@ -1,4 +1,4 @@
-package dev.local.autotube
+package com.ihue.dashplayer
 
 import android.app.Activity
 import android.view.Gravity

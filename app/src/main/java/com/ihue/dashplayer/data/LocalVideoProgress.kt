@@ -1,10 +1,10 @@
-package dev.local.autotube.data
+package com.ihue.dashplayer.data
 
 import android.content.Context
 import android.net.Uri
 
 object LocalVideoProgress {
-    private const val prefs = "autotube_local_video_progress"
+    private const val prefs = "dashplayer_local_video_progress"
 
     fun position(context: Context, uri: Uri): Long = context.applicationContext
         .getSharedPreferences(prefs, Context.MODE_PRIVATE).getLong(uri.toString(), 0L)

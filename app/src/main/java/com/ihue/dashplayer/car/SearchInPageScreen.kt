@@ -1,4 +1,4 @@
-package dev.local.autotube.car
+package com.ihue.dashplayer.car
 
 import androidx.car.app.CarContext
 import androidx.car.app.Screen
@@ -8,8 +8,8 @@ import androidx.car.app.model.Row
 import androidx.car.app.model.SearchTemplate
 import androidx.car.app.model.Template
 import androidx.lifecycle.lifecycleScope
-import dev.local.autotube.data.AutoTubeDatabase
-import dev.local.autotube.data.SearchHistory
+import com.ihue.dashplayer.data.DashPlayerDatabase
+import com.ihue.dashplayer.data.SearchHistory
 import kotlinx.coroutines.launch
 
 /**
@@ -31,7 +31,7 @@ class SearchInPageScreen(
 
     init {
         lifecycleScope.launch {
-            recentSearches = AutoTubeDatabase.get(carContext).dao().getRecentSearches()
+            recentSearches = DashPlayerDatabase.get(carContext).dao().getRecentSearches()
             invalidate()
         }
     }
@@ -40,7 +40,7 @@ class SearchInPageScreen(
         val trimmed = query.trim()
         if (trimmed.isNotEmpty()) {
             lifecycleScope.launch {
-                AutoTubeDatabase.get(carContext).dao()
+                DashPlayerDatabase.get(carContext).dao()
                     .upsertSearch(SearchHistory(trimmed, System.currentTimeMillis()))
             }
         }

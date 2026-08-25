@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "AutoTube"
+rootProject.name = "DashPlayer"
 include(":app")

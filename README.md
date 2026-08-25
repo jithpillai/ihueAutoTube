@@ -1,4 +1,4 @@
-# AutoTube — personal Android Auto video app (scaffold)
+# Dash Player — personal Android Auto video app (scaffold)
 
 Personal-use only. Not for distribution. Declares the `NAVIGATION` car-app category
 specifically to get a raw `Surface` (instead of a fixed template UI) so a hidden
@@ -6,7 +6,7 @@ specifically to get a raw `Surface` (instead of a fixed template UI) so a hidden
 `bridge/WebViewSurfaceBridge.kt` and `car/PlaybackScreen.kt` for exactly how and why.
 
 ## What's here
-- `car/AutoTubeCarAppService.kt`, `car/AutoTubeSession.kt` — entry point Android Auto binds to
+- `car/DashPlayerCarAppService.kt`, `car/DashPlayerSession.kt` — entry point Android Auto binds to
 - `car/HomeScreen.kt` — favorites + continue-watching chooser (`ListTemplate`)
 - `car/BrowserScreen.kt` — free-form URL entry via `SearchTemplate` (real on-screen keyboard)
 - `car/PlaybackScreen.kt` — the actual `NavigationTemplate` + `Surface` + WebView bridge

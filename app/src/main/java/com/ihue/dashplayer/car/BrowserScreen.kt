@@ -1,4 +1,4 @@
-package dev.local.autotube.car
+package com.ihue.dashplayer.car
 
 import androidx.car.app.CarContext
 import androidx.car.app.Screen
@@ -7,10 +7,10 @@ import androidx.car.app.model.Row
 import androidx.car.app.model.Template
 import androidx.car.app.model.SearchTemplate
 import androidx.lifecycle.lifecycleScope
-import dev.local.autotube.data.AutoTubeDatabase
-import dev.local.autotube.data.SavedItem
-import dev.local.autotube.data.SavedItemType
-import dev.local.autotube.data.SearchHistory
+import com.ihue.dashplayer.data.DashPlayerDatabase
+import com.ihue.dashplayer.data.SavedItem
+import com.ihue.dashplayer.data.SavedItemType
+import com.ihue.dashplayer.data.SearchHistory
 import kotlinx.coroutines.launch
 
 /**
@@ -26,7 +26,7 @@ class BrowserScreen(carContext: CarContext) : Screen(carContext) {
 
     init {
         lifecycleScope.launch {
-            val dao = AutoTubeDatabase.get(carContext).dao()
+            val dao = DashPlayerDatabase.get(carContext).dao()
             knownSites = dao.getSavedItems(SavedItemType.SITE)
             recentSearches = dao.getRecentSearches()
             invalidate()
@@ -39,7 +39,7 @@ class BrowserScreen(carContext: CarContext) : Screen(carContext) {
         val trimmed = query.trim()
         if (trimmed.isEmpty()) return
         lifecycleScope.launch {
-            AutoTubeDatabase.get(carContext).dao()
+            DashPlayerDatabase.get(carContext).dao()
                 .upsertSearch(SearchHistory(trimmed, System.currentTimeMillis()))
         }
         PlaybackScreen.openFresh(carContext, UrlUtils.normalizeUrl(trimmed))

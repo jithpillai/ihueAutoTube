@@ -1,4 +1,4 @@
-package dev.local.autotube.bridge
+package com.ihue.dashplayer.bridge
 
 import android.content.Context
 import android.webkit.WebView

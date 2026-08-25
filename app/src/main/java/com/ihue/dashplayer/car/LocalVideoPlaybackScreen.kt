@@ -1,4 +1,4 @@
-package dev.local.autotube.car
+package com.ihue.dashplayer.car
 
 import androidx.car.app.AppManager
 import androidx.car.app.CarContext
@@ -14,9 +14,9 @@ import androidx.car.app.navigation.model.NavigationTemplate
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.media3.common.Player
-import dev.local.autotube.data.LocalVideo
-import dev.local.autotube.data.LocalVideoProgress
-import dev.local.autotube.local.LocalVideoPlayer
+import com.ihue.dashplayer.data.LocalVideo
+import com.ihue.dashplayer.data.LocalVideoProgress
+import com.ihue.dashplayer.local.LocalVideoPlayer
 
 /** Native local-file playback directly to Android Auto's raw Surface. */
 class LocalVideoPlaybackScreen(

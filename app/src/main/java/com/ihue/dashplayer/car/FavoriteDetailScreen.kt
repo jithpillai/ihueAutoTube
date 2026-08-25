@@ -1,4 +1,4 @@
-package dev.local.autotube.car
+package com.ihue.dashplayer.car
 
 import androidx.car.app.CarContext
 import androidx.car.app.Screen
@@ -8,8 +8,8 @@ import androidx.car.app.model.ListTemplate
 import androidx.car.app.model.Row
 import androidx.car.app.model.Template
 import androidx.lifecycle.lifecycleScope
-import dev.local.autotube.data.AutoTubeDatabase
-import dev.local.autotube.data.SavedItem
+import com.ihue.dashplayer.data.DashPlayerDatabase
+import com.ihue.dashplayer.data.SavedItem
 import kotlinx.coroutines.launch
 
 /** Open or delete a single favorite. Returns true via setResult() if it was deleted. */
@@ -31,7 +31,7 @@ class FavoriteDetailScreen(carContext: CarContext, private val item: SavedItem) 
                     .setTitle("Delete")
                     .setOnClickListener {
                         lifecycleScope.launch {
-                            AutoTubeDatabase.get(carContext).dao().deleteSavedItem(item.id)
+                            DashPlayerDatabase.get(carContext).dao().deleteSavedItem(item.id)
                             setResult(true)
                             finish()
                         }

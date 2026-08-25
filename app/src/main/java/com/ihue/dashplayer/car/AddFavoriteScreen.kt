@@ -1,4 +1,4 @@
-package dev.local.autotube.car
+package com.ihue.dashplayer.car
 
 import androidx.car.app.CarContext
 import androidx.car.app.Screen
@@ -7,8 +7,8 @@ import androidx.car.app.model.ItemList
 import androidx.car.app.model.SearchTemplate
 import androidx.car.app.model.Template
 import androidx.lifecycle.lifecycleScope
-import dev.local.autotube.data.AutoTubeDatabase
-import dev.local.autotube.data.SavedItem
+import com.ihue.dashplayer.data.DashPlayerDatabase
+import com.ihue.dashplayer.data.SavedItem
 import kotlinx.coroutines.launch
 
 /**
@@ -30,7 +30,7 @@ class AddFavoriteScreen(carContext: CarContext) : Screen(carContext) {
                 if (searchText.isBlank()) return
                 val url = UrlUtils.normalizeUrl(searchText)
                 lifecycleScope.launch {
-                    AutoTubeDatabase.get(carContext).dao().upsertSavedItem(
+                    DashPlayerDatabase.get(carContext).dao().upsertSavedItem(
                         SavedItem(
                             type = UrlUtils.guessType(url),
                             title = UrlUtils.guessTitle(url),

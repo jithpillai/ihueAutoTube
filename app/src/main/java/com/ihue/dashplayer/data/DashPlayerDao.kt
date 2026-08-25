@@ -1,4 +1,4 @@
-package dev.local.autotube.data
+package com.ihue.dashplayer.data
 
 import androidx.room.Dao
 import androidx.room.Insert
@@ -6,7 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 
 @Dao
-interface AutoTubeDao {
+interface DashPlayerDao {
 
     @Query("SELECT * FROM saved_items WHERE type = :type ORDER BY lastOpenedAt DESC")
     suspend fun getSavedItems(type: SavedItemType): List<SavedItem>

@@ -1,4 +1,4 @@
-package dev.local.autotube
+package com.ihue.dashplayer
 
 import android.app.Activity
 import android.graphics.Color
@@ -11,9 +11,9 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import dev.local.autotube.data.AutoTubeDatabase
-import dev.local.autotube.data.SavedItem
-import dev.local.autotube.data.SavedItemType
+import com.ihue.dashplayer.data.DashPlayerDatabase
+import com.ihue.dashplayer.data.SavedItem
+import com.ihue.dashplayer.data.SavedItemType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -76,7 +76,7 @@ class FavoritesActivity : Activity() {
 
     private fun reload() {
         scope.launch {
-            val dao = AutoTubeDatabase.get(applicationContext).dao()
+            val dao = DashPlayerDatabase.get(applicationContext).dao()
             val items = dao.getSavedItems(SavedItemType.CHANNEL) +
                 dao.getSavedItems(SavedItemType.PLAYLIST) +
                 dao.getSavedItems(SavedItemType.SITE)
@@ -136,7 +136,7 @@ class FavoritesActivity : Activity() {
                     text = "Remove"
                     setOnClickListener {
                         scope.launch {
-                            AutoTubeDatabase.get(applicationContext).dao().deleteSavedItem(item.id)
+                            DashPlayerDatabase.get(applicationContext).dao().deleteSavedItem(item.id)
                             reload()
                         }
                     }

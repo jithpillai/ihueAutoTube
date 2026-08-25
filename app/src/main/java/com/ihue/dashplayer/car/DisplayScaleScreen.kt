@@ -1,4 +1,4 @@
-package dev.local.autotube.car
+package com.ihue.dashplayer.car
 
 import androidx.car.app.CarContext
 import androidx.car.app.Screen
@@ -7,7 +7,7 @@ import androidx.car.app.model.ItemList
 import androidx.car.app.model.ListTemplate
 import androidx.car.app.model.Row
 import androidx.car.app.model.Template
-import dev.local.autotube.data.DisplayScaleSettings
+import com.ihue.dashplayer.data.DisplayScaleSettings
 
 /** A deliberate, persisted display-size choice — never an automatic zoom adjustment. */
 class DisplayScaleScreen(

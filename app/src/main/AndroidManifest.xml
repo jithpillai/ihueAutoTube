@@ -17,7 +17,7 @@
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:label="AutoTube"
+        android:label="Dash Player"
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
 
         <!-- Required: tells Android Auto this app has car-screen content, and which category.
@@ -33,10 +33,10 @@
             android:resource="@xml/automotive_app_desc" />
 
         <service
-            android:name=".car.AutoTubeCarAppService"
+            android:name=".car.DashPlayerCarAppService"
             android:exported="true"
             android:icon="@mipmap/ic_launcher"
-            android:label="AutoTube Player">
+            android:label="Dash Player">
             <intent-filter>
                 <action android:name="androidx.car.app.CarAppService" />
                 <category android:name="androidx.car.app.category.NAVIGATION" />
@@ -44,7 +44,7 @@
         </service>
 
         <!-- The actual entry point into the car UI. androidx.car.app ships this class — it
-             hosts AutoTubeCarAppService. Deliberately NOT given LAUNCHER: on a real phone,
+             hosts DashPlayerCarAppService. Deliberately NOT given LAUNCHER: on a real phone,
              CarAppActivity shows its own built-in "connect to Android Auto" gate (which reads
              like a broken "needs update" prompt to Play Store) whenever it's opened without an
              actual car host attached — exactly what a phone-home-screen tap is. Android Auto /
@@ -58,7 +58,7 @@
             android:name="androidx.car.app.activity.CarAppActivity"
             android:exported="true"
             android:launchMode="singleTask"
-            android:label="AutoTube Player"
+            android:label="Dash Player"
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
