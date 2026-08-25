@@ -2,6 +2,7 @@ package dev.local.autotube.car
 
 import androidx.car.app.AppManager
 import androidx.car.app.CarContext
+import androidx.car.app.CarToast
 import androidx.car.app.Screen
 import androidx.car.app.SurfaceCallback
 import androidx.car.app.SurfaceContainer
@@ -12,6 +13,7 @@ import androidx.car.app.model.Template
 import androidx.car.app.navigation.model.NavigationTemplate
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.media3.common.Player
 import dev.local.autotube.data.LocalVideo
 import dev.local.autotube.data.LocalVideoProgress
 import dev.local.autotube.local.LocalVideoPlayer
@@ -21,35 +23,42 @@ class LocalVideoPlaybackScreen(
     carContext: CarContext,
     private val video: LocalVideo
 ) : Screen(carContext), DefaultLifecycleObserver {
-    private val player = LocalVideoPlayer.open(carContext, video) { invalidate() }
+    private val player = LocalVideoPlayer.play(carContext, video)
     private val drivingGate = DrivingStateGate(carContext)
+    private val playerListener = object : Player.Listener {
+        override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+            CarToast.makeText(carContext, "Can't play this video", CarToast.LENGTH_LONG).show()
+        }
+    }
 
     private val surfaceCallback = object : SurfaceCallback {
         override fun onSurfaceAvailable(surfaceContainer: SurfaceContainer) {
             if (!drivingGate.isRenderingAllowed) return
-            player.setSurface(surfaceContainer.surface)
+            player.setVideoSurface(surfaceContainer.surface)
             player.play()
             invalidate()
         }
 
         override fun onSurfaceDestroyed(surfaceContainer: SurfaceContainer) {
-            player.setSurface(null)
+            player.clearVideoSurface()
         }
     }
 
     init {
         lifecycle.addObserver(this)
+        player.addListener(playerListener)
         carContext.getCarService(AppManager::class.java).setSurfaceCallback(surfaceCallback)
     }
 
     override fun onStop(owner: LifecycleOwner) {
         LocalVideoProgress.save(carContext, video.uri, player.currentPosition)
         drivingGate.onScreenStopped()
-        player.setSurface(null)
+        player.clearVideoSurface()
         invalidate()
     }
 
     override fun onDestroy(owner: LifecycleOwner) {
+        player.removeListener(playerListener)
         // Navigating to the controls/time-entry screen can destroy and recreate this Screen.
         // The player must outlive that UI transition so a seek never reloads from zero.
     }
@@ -132,10 +141,12 @@ class LocalVideoPlaybackScreen(
      * Some document-provider video sources report TIME_UNSET to ExoPlayer even
      * though the library scan already extracted the file duration.
      */
-    private fun playableDuration(): Long = player.duration.takeIf { it > 0 } ?: video.durationMs
+    private fun playableDuration(): Long = player.duration
+        .takeIf { it > 0 && it != androidx.media3.common.C.TIME_UNSET }
+        ?: video.durationMs
 
     private fun formatDuration(value: Long): String {
-        if (value <= 0L) return "0:00"
+        if (value <= 0L || value == androidx.media3.common.C.TIME_UNSET) return "0:00"
         val seconds = value / 1_000L
         val hours = seconds / 3_600
         val minutes = (seconds % 3_600) / 60
